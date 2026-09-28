@@ -22,6 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hacs/action@main
+        env:
+          # Without a token the action reads the repository anonymously, which
+          # returns nothing while it is private, so hacs.json and the manifest
+          # appear to be missing.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           category: integration
           # Brand assets live in the PUBLIC home-assistant/brands repository.
