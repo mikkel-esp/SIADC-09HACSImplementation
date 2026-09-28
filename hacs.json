@@ -1,0 +1,6 @@
+{
+  "name": "SIA DC-09 Control Center",
+  "render_readme": true,
+  "homeassistant": "2024.11.0",
+  "zip_release": false
+}

@@ -43,7 +43,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "S105", "S106"]
+# DC-09 calls its protocol identifiers "tokens"; none of them are secrets.
+"custom_components/sia_dc09/dc09/*" = ["S105"]
+"tests/*" = ["D", "S105", "S106", "ASYNC109", "ASYNC110", "RUF059"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

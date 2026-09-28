@@ -33,13 +33,13 @@ from .enrich import enrich
 from .frame import Dc09Header, Dc09ParseError, build_frame, parse_frame, peek_header
 from .models import (
     AlarmEvent,
-    DecodedPayload,
-    DecodeResult,
     Dc09ExtendedData,
     Dc09Frame,
     Dc09Protocol,
     Dc09Response,
     Dc09Validation,
+    DecodedPayload,
+    DecodeResult,
     EnrichedEvent,
     EnrichedMessage,
     EventSeverity,
@@ -77,6 +77,7 @@ __all__ = [
     "Dc09CryptoError",
     "Dc09ExtendedData",
     "Dc09Frame",
+    "Dc09Header",
     "Dc09ParseError",
     "Dc09Protocol",
     "Dc09Response",
@@ -111,11 +112,10 @@ __all__ = [
     "lookup_sia_code",
     "parse_cid_payload",
     "parse_frame",
-    "peek_header",
-    "Dc09Header",
     "parse_key",
     "parse_sia_payload",
     "parse_timestamp",
+    "peek_header",
     "severity_for",
     "sia_codes",
     "to_display_text",
@@ -135,7 +135,7 @@ def decode(
         parsed = parse_frame(datagram, key=key, received_at=received_at)
     except Dc09ParseError as err:
         return DecodeResult(ok=False, errors=(str(err),))
-    except Exception as err:  # noqa: BLE001 - never let a panel crash the receiver
+    except Exception as err:
         return DecodeResult(ok=False, errors=(f"Unexpected decoding failure: {err}",))
 
     frame = parsed.frame

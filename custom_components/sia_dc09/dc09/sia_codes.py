@@ -94,7 +94,9 @@ _SEVERITY_RULES: Final[tuple[tuple[EventSeverity, re.Pattern[str]], ...]] = (
     ),
     (
         "alarm",
-        re.compile(r"alarm|panic|holdup|duress|medical|emergency|tamper|verified", re.I),
+        re.compile(
+            r"alarm|panic|holdup|duress|medical|emergency|tamper|verified", re.I
+        ),
     ),
 )
 

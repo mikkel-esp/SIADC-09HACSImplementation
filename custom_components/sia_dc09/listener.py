@@ -17,6 +17,7 @@ on its own. The integration supplies two callables:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
@@ -159,7 +160,7 @@ async def _handle_datagram(
 
     try:
         await config.on_message(message)
-    except Exception:  # noqa: BLE001 - a handler fault must not kill the receiver
+    except Exception:
         _LOGGER.exception("Error handling message from %s", remote[0])
 
 
@@ -332,7 +333,5 @@ class Dc09Receiver:
             if task is not None:
                 self._connections.discard(task)
             writer.close()
-            try:
+            with contextlib.suppress(OSError, asyncio.CancelledError):
                 await writer.wait_closed()
-            except (OSError, asyncio.CancelledError):  # pragma: no cover
-                pass

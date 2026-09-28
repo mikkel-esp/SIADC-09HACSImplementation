@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
-from contextlib import closing
+from contextlib import closing, suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -163,10 +163,8 @@ def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         if flag in data:
             data[flag] = bool(data[flag])
     if data.get("extra"):
-        try:
+        with suppress(json.JSONDecodeError):
             data["extra"] = json.loads(data["extra"])
-        except json.JSONDecodeError:  # pragma: no cover - defensive
-            pass
     return data
 
 
@@ -177,7 +175,9 @@ class ActivityStore:
         """Initialise the store without touching the filesystem."""
         self.hass = hass
         self.entry_id = entry_id
-        self.path = Path(path or hass.config.path(f"{__package__.rsplit('.', 1)[-1]}.db"))
+        self.path = Path(
+            path or hass.config.path(f"{__package__.rsplit('.', 1)[-1]}.db")
+        )
         self._pending: list[tuple[Any, ...]] = []
 
     # --- lifecycle -----------------------------------------------------------
@@ -280,8 +280,9 @@ class ActivityStore:
             where.append("severity = ?")
             params.append(severity)
 
-        sql = (  # noqa: S608 - every fragment above is a literal
-            f"SELECT * FROM events WHERE {' AND '.join(where)} "
+        sql = (
+            # Only fixed fragments are interpolated; all values are bound.
+            f"SELECT * FROM events WHERE {' AND '.join(where)} "  # noqa: S608
             "ORDER BY received_at DESC, id DESC LIMIT ?"
         )
         params.append(max(1, min(limit, 10000)))

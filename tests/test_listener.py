@@ -184,7 +184,9 @@ async def test_responses_can_be_switched_off_entirely() -> None:
 
 async def test_unframeable_garbage_is_not_answered() -> None:
     async with running_receiver(udp_port=0, tcp_port=None) as (receiver, collector):
-        await send_udp(udp_port_of(receiver), b"not a dc-09 message", expect_reply=False)
+        await send_udp(
+            udp_port_of(receiver), b"not a dc-09 message", expect_reply=False
+        )
         await collector.wait()
 
     message = collector.messages[0]
