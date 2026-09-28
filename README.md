@@ -58,6 +58,23 @@ SIA DC-09 → Configure**, which offers:
 Saving reloads the receiver, which takes a second or two and does not lose
 stored activity.
 
+### Removing things
+
+- **One account** — **Configure → Remove accounts**. Its device and entities go
+  with it. Its stored activity is kept, so the history stays auditable; use
+  `sia_dc09.clear_activity` with that account to delete it too.
+- **The whole integration** — the three dot menu on the SIA DC-09 card, then
+  **Delete**. This closes the ports, removes every device and entity, and
+  deletes the entry's stored activity. If it was the last receiver configured,
+  the activity database file is deleted as well.
+
+The receiver's own device cannot be deleted on its own, and neither can the
+device of an account that is still configured: both are recreated the moment
+the integration reloads, so the deletion would appear to fail. Home Assistant
+explains which of the two above to use instead. Devices left over from an
+account that has already been removed are deleted automatically on the next
+reload, and can also be deleted by hand.
+
 ### Receiver
 
 | Setting | Default | Notes |
