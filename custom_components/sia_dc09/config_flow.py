@@ -211,8 +211,31 @@ def validate_account(
     return errors
 
 
-def clean_account(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalise an account submission into what gets stored."""
+def _ignore_timestamps(
+    data: dict[str, Any], key: str, previous: dict[str, Any] | None
+) -> bool:
+    """Decide whether an account should ignore message timestamps.
+
+    Mirrors ``AccountConfig.from_dict``: an encrypted account enforces
+    timestamps unless the user deliberately turns that off.
+
+    Adding a key to an existing account is treated as a fresh decision. Any
+    stored value predates the key, and a form submitted before the key existed
+    cannot have been a considered choice about replay protection.
+    """
+    if key and not (previous or {}).get(CONF_ENCRYPTION_KEY):
+        return False
+    return data.get(CONF_IGNORE_TIMESTAMPS, False if key else DEFAULT_IGNORE_TIMESTAMPS)
+
+
+def clean_account(
+    data: dict[str, Any], previous: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Normalise an account submission into what gets stored.
+
+    ``previous`` is the account as it was before an edit, which is what tells
+    us whether a key has just been added.
+    """
     account = normalise_account(data[CONF_ACCOUNT])
     key = (data.get(CONF_ENCRYPTION_KEY) or "").strip()
     cleaned: dict[str, Any] = {
@@ -221,12 +244,7 @@ def clean_account(data: dict[str, Any]) -> dict[str, Any]:
         CONF_HEARTBEAT_TIMEOUT: data.get(
             CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT
         ),
-        CONF_IGNORE_TIMESTAMPS: data.get(
-            CONF_IGNORE_TIMESTAMPS,
-            # Mirrors AccountConfig.from_dict: encrypted accounts enforce
-            # timestamps unless the user deliberately turns that off.
-            False if key else DEFAULT_IGNORE_TIMESTAMPS,
-        ),
+        CONF_IGNORE_TIMESTAMPS: _ignore_timestamps(data, key, previous),
     }
     if key:
         cleaned[CONF_ENCRYPTION_KEY] = key
@@ -435,7 +453,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
             errors = validate_account(user_input, accounts, editing=self._editing)
             if not errors:
                 updated = [
-                    clean_account(user_input)
+                    clean_account(user_input, previous=existing)
                     if normalise_account(item[CONF_ACCOUNT]) == self._editing
                     else item
                     for item in accounts

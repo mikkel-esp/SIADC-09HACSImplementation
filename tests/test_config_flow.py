@@ -250,6 +250,68 @@ async def test_options_edit_receiver(hass: HomeAssistant) -> None:
     assert len(result["data"][CONF_ACCOUNTS]) == 1
 
 
+async def test_adding_a_key_to_an_existing_account_enforces_timestamps(
+    hass: HomeAssistant,
+) -> None:
+    """Encrypting an existing account must switch on replay protection.
+
+    The stored value predates the key, and the checkbox on the edit form was
+    rendered before the key existed, so neither is a considered choice about
+    replay protection for an encrypted account.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            **RECEIVER,
+            CONF_ACCOUNTS: [{**ACCOUNT, "ignore_timestamps": True}],
+        },
+        options={},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            **ACCOUNT,
+            "ignore_timestamps": True,
+            CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD",
+        },
+    )
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is False
+
+
+async def test_editing_an_encrypted_account_keeps_a_deliberate_opt_out(
+    hass: HomeAssistant,
+) -> None:
+    """Once the key is already there, the checkbox is the user's decision."""
+    stored = {**ACCOUNT, CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD"}
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={**RECEIVER, CONF_ACCOUNTS: [stored]}, options={}
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**stored, "ignore_timestamps": True}
+    )
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is True
+
+
 async def test_options_add_and_remove_account(hass: HomeAssistant) -> None:
     """Accounts can be added and removed from the options flow."""
     entry = MockConfigEntry(

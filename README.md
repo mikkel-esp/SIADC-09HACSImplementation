@@ -258,9 +258,10 @@ being explicit about what it can and cannot protect against.
   it does not authenticate.
 - **Encrypted accounts enforce timestamps by default.** Encryption proves who
   wrote a message but not *when*, so an account with a key rejects messages
-  whose timestamp has drifted. You can turn this off per account with *Ignore
-  message timestamps* if the panel's clock cannot be trusted, but that removes
-  the only real defence against replay.
+  whose timestamp has drifted. This applies from the moment a key is added,
+  including to an account that previously ran unencrypted. You can turn it off
+  per account with *Ignore message timestamps* if the panel's clock cannot be
+  trusted, but that removes the only real defence against replay.
 - **Timestamp enforcement cannot be bypassed by omission.** With enforcement
   on, a message with a missing or unparseable timestamp is rejected rather
   than waved through.
