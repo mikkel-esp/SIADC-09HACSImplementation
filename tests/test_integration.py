@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -18,6 +19,7 @@ from custom_components.sia_dc09.const import (
     CONF_ARM_AWAY_TARGET,
     CONF_BIND_HOST,
     CONF_ENCRYPTION_KEY,
+    CONF_IGNORE_TIMESTAMPS,
     CONF_NAK_ON_BAD_CRC,
     CONF_RESPOND,
     CONF_TCP_PORT,
@@ -27,7 +29,7 @@ from custom_components.sia_dc09.const import (
     POLICY_IGNORE,
     SIA_DC09_EVENT_ALL,
 )
-from custom_components.sia_dc09.dc09 import build_frame
+from custom_components.sia_dc09.dc09 import build_frame, encrypt_body, parse_key
 
 ACCOUNT = "1234"
 KEY_HEX = "ABCDABCDABCDABCDABCDABCDABCDABCD"
@@ -42,6 +44,15 @@ def _auto_enable(enable_custom_integrations):
 def body(code: str, account: str = ACCOUNT, sequence: str = "0001") -> str:
     """Return a DC-09 body for one SIA code."""
     return f'"SIA-DCS"{sequence}R0L0#{account}[#{account}|Nri1/{code}]'
+
+
+def stamp() -> str:
+    """Return a DC-09 timestamp for right now.
+
+    Encrypted accounts enforce timestamps by default, so tests that send
+    encrypted traffic must look current rather than use a fixed date.
+    """
+    return datetime.now(UTC).strftime("%H:%M:%S,%m-%d-%Y")
 
 
 async def make_entry(
@@ -71,6 +82,18 @@ async def make_entry(
 
 async def send_udp(hass: HomeAssistant, entry: MockConfigEntry, message: str) -> bytes:
     """Send one datagram to the receiver and return its reply."""
+    return await send_raw(hass, entry, build_frame(message))
+
+
+def hub_of(hass: HomeAssistant, entry: MockConfigEntry):
+    """Return the hub backing a config entry."""
+    return hass.data[DOMAIN][entry.entry_id]
+
+
+async def send_raw(
+    hass: HomeAssistant, entry: MockConfigEntry, datagram: bytes
+) -> bytes:
+    """Send raw bytes to the receiver, returning the reply or b'' if silent."""
     hub = hass.data[DOMAIN][entry.entry_id]
     loop = asyncio.get_running_loop()
     replies: asyncio.Queue[bytes] = asyncio.Queue()
@@ -83,8 +106,11 @@ async def send_udp(hass: HomeAssistant, entry: MockConfigEntry, message: str) ->
         _Client, remote_addr=("127.0.0.1", hub.udp_port)
     )
     try:
-        transport.sendto(build_frame(message))
-        reply = await asyncio.wait_for(replies.get(), timeout=5)
+        transport.sendto(datagram)
+        try:
+            reply = await asyncio.wait_for(replies.get(), timeout=5)
+        except TimeoutError:
+            reply = b""
     finally:
         transport.close()
 
@@ -247,7 +273,7 @@ async def test_encrypted_message_round_trip(hass: HomeAssistant) -> None:
     )
 
     key = parse_key(KEY_HEX)
-    token = encrypt_body(f"#{ACCOUNT}|Nri1/CL001]", key)
+    token = encrypt_body(f"#{ACCOUNT}|Nri1/CL001]_{stamp()}", key)
     message = f'"*SIA-DCS"0001R0L0#{ACCOUNT}[{token}'
 
     reply = await send_udp(hass, entry, message)
@@ -380,3 +406,208 @@ async def test_arming_runs_the_configured_target(hass: HomeAssistant) -> None:
     assert hass.states.get("input_button.panel_arm").state != before
     # The status still only follows what the panel reports.
     assert hass.states.get("sensor.front_door_status").state == STATE_UNKNOWN
+
+
+async def test_plaintext_cannot_disarm_an_encrypted_account(
+    hass: HomeAssistant,
+) -> None:
+    """An attacker without the key must not be able to disarm.
+
+    The account is configured WITH an encryption key, so unencrypted
+    traffic for it must be rejected outright rather than applied.
+    """
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ENCRYPTION_KEY: KEY_HEX,
+            }
+        ],
+    )
+    key = parse_key(KEY_HEX)
+    assert key is not None
+
+    def encrypted(code: str, sequence: str = "0001") -> str:
+        tail = encrypt_body(f"|Nri1/{code}]_{stamp()}", key)
+        return f'"*SIA-DCS"{sequence}R0L0#{ACCOUNT}[{tail}'
+
+    # Arm the account using a properly encrypted message.
+    await send_udp(hass, entry, encrypted("CL001"))
+    assert hass.states.get("sensor.front_door_status").state == "armed_away"
+
+    # Now try to disarm it with plaintext, i.e. without knowing the key.
+    reply = await send_udp(hass, entry, body("OP001", sequence="0002"))
+
+    assert hass.states.get("sensor.front_door_status").state == "armed_away"
+    assert b"NAK" in reply
+
+
+async def test_replayed_message_does_not_change_state(hass: HomeAssistant) -> None:
+    """A captured message must not be usable twice.
+
+    Without replay protection an attacker who records an encrypted disarm
+    can suppress a later real alarm just by resending the same bytes.
+    """
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ENCRYPTION_KEY: KEY_HEX,
+            }
+        ],
+    )
+    key = parse_key(KEY_HEX)
+    assert key is not None
+
+    def encrypted(code: str, sequence: str) -> str:
+        tail = encrypt_body(f"|Nri1/{code}]_{stamp()}", key)
+        return f'"*SIA-DCS"{sequence}R0L0#{ACCOUNT}[{tail}'
+
+    disarm = encrypted("OP001", "0001")
+    await send_udp(hass, entry, disarm)
+    assert hass.states.get("sensor.front_door_status").state == "disarmed"
+
+    # A genuine alarm arrives.
+    await send_udp(hass, entry, encrypted("BA001", "0002"))
+    assert hass.states.get("sensor.front_door_status").state == "triggered"
+
+    # The attacker replays the captured disarm to hide it.
+    await send_udp(hass, entry, disarm)
+
+    assert hass.states.get("sensor.front_door_status").state == "triggered"
+
+
+async def test_missing_timestamp_is_rejected_when_enforced(
+    hass: HomeAssistant,
+) -> None:
+    """Omitting the timestamp must not bypass timestamp enforcement."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_IGNORE_TIMESTAMPS: False,
+            }
+        ],
+    )
+
+    # No trailing _<timestamp>, so there is nothing to check against.
+    await send_udp(hass, entry, body("BA001"))
+
+    assert hass.states.get("sensor.front_door_status").state == STATE_UNKNOWN
+
+
+async def test_fresh_timestamp_is_accepted_when_enforced(
+    hass: HomeAssistant,
+) -> None:
+    """Enforcement must still let a correctly stamped message through."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_IGNORE_TIMESTAMPS: False,
+            }
+        ],
+    )
+    stamp = datetime.now(UTC).strftime("%H:%M:%S,%m-%d-%Y")
+    message = f'"SIA-DCS"0001R0L0#{ACCOUNT}[#{ACCOUNT}|Nri1/BA001]_{stamp}'
+
+    await send_udp(hass, entry, message)
+
+    assert hass.states.get("sensor.front_door_status").state == "triggered"
+
+
+async def test_rejected_message_cannot_drive_entities_or_bus(
+    hass: HomeAssistant,
+) -> None:
+    """A message that failed validation must not reach entities.
+
+    The smoke sensor trusts the SIA code, so a forged cleartext ``FA`` for an
+    encrypted account would otherwise be able to report a fire.
+    """
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ENCRYPTION_KEY: KEY_HEX,
+            }
+        ],
+    )
+
+    fired: list[Any] = []
+    hass.bus.async_listen("sia_dc09_event", fired.append)
+
+    await send_udp(hass, entry, body("FA001"))
+
+    assert hass.states.get("binary_sensor.front_door_smoke").state == STATE_OFF
+    assert fired == []
+
+    # It is still auditable, which is the point of recording it.
+    assert await hub_of(hass, entry).store.async_count() == 1
+
+
+async def test_corrupt_frame_cannot_drive_entities(hass: HomeAssistant) -> None:
+    """The same protection applies to a frame with a broken checksum."""
+    entry = await make_entry(hass)
+
+    fired: list[Any] = []
+    hass.bus.async_listen("sia_dc09_event", fired.append)
+
+    # Build a valid frame, then corrupt the CRC in place.
+    frame = build_frame(body("FA001"))
+    corrupt = frame[:1] + b"FFFF" + frame[5:]
+    await send_raw(hass, entry, corrupt)
+
+    assert hass.states.get("binary_sensor.front_door_smoke").state == STATE_OFF
+    assert fired == []
+
+
+async def test_encrypted_account_enforces_timestamps_by_default(
+    hass: HomeAssistant,
+) -> None:
+    """A key implies freshness checking unless the user opts out.
+
+    Encryption alone does not prove a message is recent, so a captured
+    message stays replayable until timestamps are enforced.
+    """
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ENCRYPTION_KEY: KEY_HEX,
+            }
+        ],
+    )
+    key = parse_key(KEY_HEX)
+    assert key is not None
+
+    stale = encrypt_body("|Nri1/OP001]_10:00:00,01-01-2024", key)
+    await send_udp(hass, entry, f'"*SIA-DCS"0001R0L0#{ACCOUNT}[{stale}')
+
+    assert hass.states.get("sensor.front_door_status").state == STATE_UNKNOWN
+
+
+async def test_unencrypted_account_still_ignores_timestamps(
+    hass: HomeAssistant,
+) -> None:
+    """Without a key the check buys nothing, so panels keep working."""
+    entry = await make_entry(hass)
+
+    await send_udp(
+        hass,
+        entry,
+        f'"SIA-DCS"0001R0L0#{ACCOUNT}[#{ACCOUNT}|Nri1/BA001]_10:00:00,01-01-2024',
+    )
+
+    assert hass.states.get("sensor.front_door_status").state == "triggered"

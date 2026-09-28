@@ -122,7 +122,14 @@ def account_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
             vol.Required(
                 CONF_IGNORE_TIMESTAMPS,
-                default=defaults.get(CONF_IGNORE_TIMESTAMPS, DEFAULT_IGNORE_TIMESTAMPS),
+                default=defaults.get(
+                    CONF_IGNORE_TIMESTAMPS,
+                    # An encrypted account enforces timestamps by default,
+                    # because that is what makes replay protection possible.
+                    False
+                    if defaults.get(CONF_ENCRYPTION_KEY)
+                    else DEFAULT_IGNORE_TIMESTAMPS,
+                ),
             ): bool,
             vol.Optional(CONF_ARM_AWAY_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_ARM_HOME_TARGET): ARM_TARGET_SELECTOR,
@@ -193,6 +200,7 @@ def validate_account(
 def clean_account(data: dict[str, Any]) -> dict[str, Any]:
     """Normalise an account submission into what gets stored."""
     account = normalise_account(data[CONF_ACCOUNT])
+    key = (data.get(CONF_ENCRYPTION_KEY) or "").strip()
     cleaned: dict[str, Any] = {
         CONF_ACCOUNT: account,
         CONF_NAME: (data.get(CONF_NAME) or "").strip() or account,
@@ -200,10 +208,13 @@ def clean_account(data: dict[str, Any]) -> dict[str, Any]:
             CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT
         ),
         CONF_IGNORE_TIMESTAMPS: data.get(
-            CONF_IGNORE_TIMESTAMPS, DEFAULT_IGNORE_TIMESTAMPS
+            CONF_IGNORE_TIMESTAMPS,
+            # Mirrors AccountConfig.from_dict: encrypted accounts enforce
+            # timestamps unless the user deliberately turns that off.
+            False if key else DEFAULT_IGNORE_TIMESTAMPS,
         ),
     }
-    if key := (data.get(CONF_ENCRYPTION_KEY) or "").strip():
+    if key:
         cleaned[CONF_ENCRYPTION_KEY] = key
     for target in TARGET_KEYS:
         if value := (data.get(target) or "").strip():

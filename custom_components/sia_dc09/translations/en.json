@@ -40,7 +40,7 @@
           "account": "The hexadecimal account number the panel transmits, 3 to 16 characters.",
           "encryption_key": "Optional AES key as 32, 48 or 64 hexadecimal characters. Leave empty for unencrypted messages.",
           "heartbeat_timeout": "The account is marked offline when nothing is received for this long.",
-          "ignore_timestamps": "Leave on unless your panel's clock is reliably synchronised.",
+          "ignore_timestamps": "Turning this on disables replay protection for the account. Encrypted accounts enforce timestamps by default; only ignore them if the panel's clock cannot be trusted.",
           "arm_away_target": "Optional. DC-09 is receive only, so arming from Home Assistant runs this script, scene or button instead."
         }
       },

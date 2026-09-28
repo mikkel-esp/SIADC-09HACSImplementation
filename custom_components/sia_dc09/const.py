@@ -57,9 +57,17 @@ TIMEBAND_FUTURE: Final = 40
 #: Drops an idle panel connection after five minutes so sockets cannot pile up.
 TCP_IDLE_TIMEOUT: Final = 5 * 60
 
-#: A re-sent message with the same account and sequence inside this window is
-#: answered again but only logged once.
-DUPLICATE_WINDOW_SECONDS: Final = 10
+#: A byte-identical message inside this window is treated as the panel
+#: retransmitting after a lost ACK: it is acknowledged again but applied only
+#: once. The window is deliberately short. A longer one would risk swallowing a
+#: genuine repeat alarm from a panel that omits timestamps and reuses sequence
+#: numbers, and it is not a substitute for replay protection - enforcing
+#: timestamps is, which is what ``ignore_timestamps`` controls.
+DUPLICATE_WINDOW_SECONDS: Final = 30
+
+#: Upper bound on remembered digests per account, so a chatty or hostile panel
+#: cannot grow memory without limit.
+REPLAY_CACHE_SIZE: Final = 512
 
 # --- Unknown account policies ------------------------------------------------
 

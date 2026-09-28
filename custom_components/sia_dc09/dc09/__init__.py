@@ -129,10 +129,19 @@ def decode(
     datagram: bytes,
     key: bytes | None = None,
     received_at: datetime | None = None,
+    require_encryption: bool = False,
 ) -> DecodeResult:
-    """Decode a raw DC-09 datagram into a frame plus its protocol payload."""
+    """Decode a raw DC-09 datagram into a frame plus its protocol payload.
+
+    Set ``require_encryption`` to reject cleartext messages, which is what
+    the receiver does for any account that has a key configured.
+    """
     try:
-        parsed = parse_frame(datagram, key=key, received_at=received_at)
+        parsed = parse_frame(
+            datagram,
+            key=key,
+            received_at=received_at,
+        )
     except Dc09ParseError as err:
         return DecodeResult(ok=False, errors=(str(err),))
     except Exception as err:
@@ -151,6 +160,11 @@ def decode(
             f"Length mismatch: message declares 0x{frame.length.received} "
             f"but the content is 0x{frame.length.calculated} bytes."
         )
+    if require_encryption and not frame.encrypted:
+        # The account has a key configured, so cleartext cannot be trusted:
+        # anyone able to reach the port could have forged it. The frame is
+        # still returned so the caller can NAK it and log the account.
+        errors.append("Message is not encrypted but this account requires encryption.")
 
     return DecodeResult(
         ok=not errors,
