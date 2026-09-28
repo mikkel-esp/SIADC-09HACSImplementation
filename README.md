@@ -45,6 +45,19 @@ Copy `custom_components/sia_dc09` into your Home Assistant
 
 Everything is configured in the UI; there is no YAML.
 
+Initial setup asks for the receiver settings and then collects accounts one at
+a time. To change anything afterwards, go to **Settings → Devices & services →
+SIA DC-09 → Configure**, which offers:
+
+- **Receiver settings** — ports, bind address, responses, retention.
+- **Add an account** — another panel.
+- **Edit an account** — pick an account, then change its name, key, user names
+  or arming targets. Everything is prefilled with what is stored now.
+- **Remove accounts**.
+
+Saving reloads the receiver, which takes a second or two and does not lose
+stored activity.
+
 ### Receiver
 
 | Setting | Default | Notes |
@@ -85,7 +98,8 @@ you have not configured:
 
 Panels identify whoever armed or disarmed by number, so an event reads
 `Closing Report - User number 501 (area 1)`. Give the numbers names, one per
-line, in the account's **Users** box:
+line, in the account's **Users** box — on **Add an account** during setup, or
+afterwards under **Configure → Edit an account**:
 
 ```
 501: Mikkel
