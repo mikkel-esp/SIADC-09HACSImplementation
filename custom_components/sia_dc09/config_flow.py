@@ -102,24 +102,34 @@ def receiver_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     )
 
 
-def account_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+def account_schema(
+    defaults: dict[str, Any] | None = None, *, editing: bool = False
+) -> vol.Schema:
     """Return the schema for adding or editing one account.
 
     The entity targets carry no default because an empty string is not a valid
     entity ID; ``add_suggested_values_to_schema`` prefills them instead.
+
+    The timestamp option is offered only when editing. On the creation form the
+    key has not been entered yet, so the checkbox would have to render its
+    insecure default and would then be submitted as an explicit choice, leaving
+    a new encrypted account open to replay. Leaving the field out lets
+    ``clean_account`` derive it from the key that was actually supplied.
     """
     defaults = defaults or {}
-    return vol.Schema(
-        {
-            vol.Required(CONF_ACCOUNT, default=defaults.get(CONF_ACCOUNT, "")): str,
-            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
-            vol.Optional(
-                CONF_ENCRYPTION_KEY, default=defaults.get(CONF_ENCRYPTION_KEY, "")
-            ): str,
-            vol.Required(
-                CONF_HEARTBEAT_TIMEOUT,
-                default=defaults.get(CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT),
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
+    schema: dict[Any, Any] = {
+        vol.Required(CONF_ACCOUNT, default=defaults.get(CONF_ACCOUNT, "")): str,
+        vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
+        vol.Optional(
+            CONF_ENCRYPTION_KEY, default=defaults.get(CONF_ENCRYPTION_KEY, "")
+        ): str,
+        vol.Required(
+            CONF_HEARTBEAT_TIMEOUT,
+            default=defaults.get(CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT),
+        ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
+    }
+    if editing:
+        schema[
             vol.Required(
                 CONF_IGNORE_TIMESTAMPS,
                 default=defaults.get(
@@ -130,13 +140,17 @@ def account_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
                     if defaults.get(CONF_ENCRYPTION_KEY)
                     else DEFAULT_IGNORE_TIMESTAMPS,
                 ),
-            ): bool,
+            )
+        ] = bool
+    schema.update(
+        {
             vol.Optional(CONF_ARM_AWAY_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_ARM_HOME_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_ARM_NIGHT_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_DISARM_TARGET): ARM_TARGET_SELECTOR,
         }
     )
+    return vol.Schema(schema)
 
 
 TARGET_KEYS = (
@@ -431,7 +445,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
             return self.async_show_form(
                 step_id="edit_account",
                 data_schema=self.add_suggested_values_to_schema(
-                    account_schema(user_input),
+                    account_schema(user_input, editing=True),
                     {key: user_input.get(key) for key in TARGET_KEYS},
                 ),
                 errors=errors,
@@ -440,7 +454,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="edit_account",
             data_schema=self.add_suggested_values_to_schema(
-                account_schema(existing),
+                account_schema(existing, editing=True),
                 {key: existing.get(key) for key in TARGET_KEYS},
             ),
         )

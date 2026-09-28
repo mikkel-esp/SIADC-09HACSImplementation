@@ -444,6 +444,45 @@ async def test_plaintext_cannot_disarm_an_encrypted_account(
     assert b"NAK" in reply
 
 
+async def test_replay_is_blocked_while_the_timestamp_still_looks_fresh(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Deduplication must outlive the window in which a replay is accepted.
+
+    A captured message stays inside the permitted timeband for a while, so if
+    the digest cache expired first an attacker could simply wait and then
+    replay it.
+    """
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ENCRYPTION_KEY: KEY_HEX,
+            }
+        ],
+    )
+    key = parse_key(KEY_HEX)
+    assert key is not None
+
+    def encrypted(code: str, sequence: str) -> str:
+        tail = encrypt_body(f"|Nri1/{code}]_{stamp()}", key)
+        return f'"*SIA-DCS"{sequence}R0L0#{ACCOUNT}[{tail}'
+
+    disarm = encrypted("OP001", "0001")
+    await send_udp(hass, entry, disarm)
+    await send_udp(hass, entry, encrypted("BA001", "0002"))
+    assert hass.states.get("sensor.front_door_status").state == "triggered"
+
+    # Long enough that a short deduplication window would have forgotten it,
+    # but still inside the timeband, so the timestamp check alone lets it by.
+    freezer.tick(60)
+    await send_udp(hass, entry, disarm)
+
+    assert hass.states.get("sensor.front_door_status").state == "triggered"
+
+
 async def test_replayed_message_does_not_change_state(hass: HomeAssistant) -> None:
     """A captured message must not be usable twice.
 

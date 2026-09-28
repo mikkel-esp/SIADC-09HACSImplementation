@@ -250,8 +250,12 @@ being explicit about what it can and cannot protect against.
   disarm, because the account number travels in the cleartext header.
 - **Replay and retransmission are not applied twice.** A byte-identical message
   for an account is acknowledged, so a panel retransmitting after a lost ACK
-  behaves correctly, but it only moves the alarm state once. This window is
-  deliberately short - it deduplicates, it does not authenticate.
+  behaves correctly, but it only moves the alarm state once. For an account
+  that enforces timestamps, this memory lasts as long as a captured message
+  would still be accepted, closing the gap between the two checks. For an
+  account that ignores timestamps the window is deliberately short, because two
+  identical events are then genuinely indistinguishable: there it deduplicates,
+  it does not authenticate.
 - **Encrypted accounts enforce timestamps by default.** Encryption proves who
   wrote a message but not *when*, so an account with a key rejects messages
   whose timestamp has drifted. You can turn this off per account with *Ignore
@@ -284,6 +288,9 @@ The practical consequences:
   against the panel going silent when its clock drifts.
 - Treat network position as part of your threat model: put the receiver on a
   trusted network segment rather than exposing it to the internet.
+- Duplicate detection is held in memory, so restarting Home Assistant clears
+  it. A message captured moments before a restart can be replayed until its
+  timestamp falls outside the accepted band.
 - Use a different key for each account so one compromised panel does not
   expose the rest.
 

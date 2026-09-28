@@ -62,7 +62,9 @@ TCP_IDLE_TIMEOUT: Final = 5 * 60
 #: once. The window is deliberately short. A longer one would risk swallowing a
 #: genuine repeat alarm from a panel that omits timestamps and reuses sequence
 #: numbers, and it is not a substitute for replay protection - enforcing
-#: timestamps is, which is what ``ignore_timestamps`` controls.
+#: timestamps is, which is what ``ignore_timestamps`` controls. Accounts that
+#: do enforce timestamps remember digests for the length of the accepted
+#: timeband instead, so a capture cannot be replayed once this window lapses.
 DUPLICATE_WINDOW_SECONDS: Final = 30
 
 #: Upper bound on remembered digests per account, so a chatty or hostile panel

@@ -288,7 +288,7 @@ class SiaDc09Hub:
             )
             return
 
-        if self._is_duplicate(account, message):
+        if self._is_duplicate(config, account, message):
             # Most likely a panel retransmitting because our ACK was lost.
             # The listener has already acknowledged it, so applying it a
             # second time would be wrong.
@@ -383,7 +383,8 @@ class SiaDc09Hub:
 
         Rejecting stale timestamps defeats replay attacks, which is the reason
         DC-09 carries one at all, but a panel with a wrong clock would then go
-        silent. The per-account default is therefore to ignore timestamps.
+        silent. Accounts without a key therefore ignore timestamps by default,
+        since an unauthenticated timestamp is attacker-writable anyway.
         """
         if config.ignore_timestamps:
             return True
@@ -398,19 +399,33 @@ class SiaDc09Hub:
         drift = frame.timestamp_drift_seconds
         return -TIMEBAND_FUTURE <= drift <= TIMEBAND_PAST
 
-    def _is_duplicate(self, account: str, message: ReceivedMessage) -> bool:
+    def _is_duplicate(
+        self, config: AccountConfig, account: str, message: ReceivedMessage
+    ) -> bool:
         """Return whether this exact message arrived moments ago.
 
-        Keyed on a digest of the raw bytes, so it catches a panel
-        retransmitting after a lost ACK as well as an immediate replay. The
-        window is short on purpose: this deduplicates, it does not authenticate.
-        Real replay protection comes from enforcing timestamps.
+        Keyed on a digest of the raw bytes, so it catches a panel retransmitting
+        after a lost ACK as well as an immediate replay.
+
+        How long a digest is worth keeping depends on whether timestamps are
+        enforced. When they are, the cache has to outlive the window in which a
+        captured message still looks fresh, or a replay simply waits for the
+        digest to expire; a genuinely new event carries a different timestamp or
+        sequence number, so it hashes differently and is never mistaken for a
+        duplicate. When timestamps are ignored, two identical events really are
+        indistinguishable, so the window stays short and this only absorbs
+        retransmissions. Either way it deduplicates, it does not authenticate.
         """
         digest = hashlib.sha256(message.raw).digest()
         now = message.received_at
         seen = self._recent_digests[account]
 
-        cutoff = now - timedelta(seconds=DUPLICATE_WINDOW_SECONDS)
+        window = (
+            DUPLICATE_WINDOW_SECONDS
+            if config.ignore_timestamps
+            else TIMEBAND_PAST + TIMEBAND_FUTURE
+        )
+        cutoff = now - timedelta(seconds=window)
         while seen and seen[0][1] < cutoff:
             seen.popleft()
 

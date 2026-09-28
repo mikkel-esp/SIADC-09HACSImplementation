@@ -33,7 +33,6 @@ ACCOUNT = {
     CONF_ACCOUNT: "1234",
     "name": "Front door",
     "heartbeat_timeout": 90,
-    "ignore_timestamps": True,
 }
 
 
@@ -167,6 +166,30 @@ async def test_valid_keys(hass: HomeAssistant, key: str) -> None:
         result["flow_id"], {**ACCOUNT, CONF_ENCRYPTION_KEY: key}
     )
     assert result["step_id"] == "add_another"
+
+
+async def test_new_encrypted_account_enforces_timestamps(hass: HomeAssistant) -> None:
+    """Adding a key must switch on replay protection for a new account.
+
+    The timestamp option is deliberately absent from the creation form: the
+    key is entered on the same form, so a checkbox there would have to render
+    the insecure default and would then be stored as a deliberate choice.
+    """
+    result = await _start(hass, {CONF_UDP_PORT: 10111, CONF_TCP_PORT: 10111})
+    assert "ignore_timestamps" not in {
+        str(key.schema) for key in result["data_schema"].schema
+    }
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**ACCOUNT, CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD"},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"add_another": False}
+    )
+    await hass.async_block_till_done()
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is False
 
 
 async def test_duplicate_account_rejected(hass: HomeAssistant) -> None:

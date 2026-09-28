@@ -90,14 +90,21 @@ def test_receiver_fields_are_translated() -> None:
 
 
 def test_account_fields_are_translated() -> None:
-    """Every field in the account schema is labelled, in all three steps."""
+    """Every field in the account schema is labelled, in all three steps.
+
+    The timestamp option only appears when editing, so the creation steps
+    carry one field fewer.
+    """
     strings = load("strings.json")
-    fields = {str(key.schema) for key in config_flow.account_schema().schema}
-    for step, section in (
-        ("account", "config"),
-        ("add_account", "options"),
-        ("edit_account", "options"),
+    for step, section, editing in (
+        ("account", "config", False),
+        ("add_account", "options", False),
+        ("edit_account", "options", True),
     ):
+        fields = {
+            str(key.schema)
+            for key in config_flow.account_schema(editing=editing).schema
+        }
         assert fields == set(strings[section]["step"][step]["data"]), step
 
 

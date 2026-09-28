@@ -30,7 +30,6 @@
           "name": "Name",
           "encryption_key": "Encryption key",
           "heartbeat_timeout": "Heartbeat timeout (minutes)",
-          "ignore_timestamps": "Ignore message timestamps",
           "arm_away_target": "Arm away target",
           "arm_home_target": "Arm home target",
           "arm_night_target": "Arm night target",
@@ -38,9 +37,8 @@
         },
         "data_description": {
           "account": "The hexadecimal account number the panel transmits, 3 to 16 characters.",
-          "encryption_key": "Optional AES key as 32, 48 or 64 hexadecimal characters. Leave empty for unencrypted messages.",
+          "encryption_key": "Optional AES key as 32, 48 or 64 hexadecimal characters. Leave empty for unencrypted messages. Supplying a key also turns on timestamp replay protection, which you can switch off later by editing the account.",
           "heartbeat_timeout": "The account is marked offline when nothing is received for this long.",
-          "ignore_timestamps": "Turning this on disables replay protection for the account. Encrypted accounts enforce timestamps by default; only ignore them if the panel's clock cannot be trusted.",
           "arm_away_target": "Optional. DC-09 is receive only, so arming from Home Assistant runs this script, scene or button instead."
         }
       },
@@ -94,7 +92,6 @@
           "name": "Name",
           "encryption_key": "Encryption key",
           "heartbeat_timeout": "Heartbeat timeout (minutes)",
-          "ignore_timestamps": "Ignore message timestamps",
           "arm_away_target": "Arm away target",
           "arm_home_target": "Arm home target",
           "arm_night_target": "Arm night target",
