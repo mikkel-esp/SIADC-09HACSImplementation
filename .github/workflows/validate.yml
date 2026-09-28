@@ -24,8 +24,9 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # Brand assets live in the home-assistant/brands repository, which
-          # needs a separate submission. Drop this once that is merged.
+          # Brand assets live in the PUBLIC home-assistant/brands repository.
+          # Do NOT submit them: the owner has asked that no brands PR be
+          # opened unless they specifically request it. Leave this ignored.
           ignore: brands
 
   lint:
