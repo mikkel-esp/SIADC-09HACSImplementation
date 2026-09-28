@@ -103,6 +103,47 @@ async def test_flow_accepts_several_accounts(hass: HomeAssistant) -> None:
     assert [item[CONF_ACCOUNT] for item in accounts] == ["1234", "ABCD"]
 
 
+async def test_flow_accepts_user_names(hass: HomeAssistant) -> None:
+    """User numbers typed one per line become a number to name mapping."""
+    result = await _start(hass, {CONF_UDP_PORT: 10103, CONF_TCP_PORT: 10103})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**ACCOUNT, "users": "501: Mikkel\n0502 = Anna\n"},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"add_another": False}
+    )
+    await hass.async_block_till_done()
+
+    # Leading zeros are dropped: panels pad the same user inconsistently.
+    assert result["data"][CONF_ACCOUNTS][0]["users"] == {
+        "501": "Mikkel",
+        "502": "Anna",
+    }
+
+
+async def test_flow_rejects_unparsable_users(hass: HomeAssistant) -> None:
+    """A malformed line is reported rather than silently dropped."""
+    result = await _start(hass, {CONF_UDP_PORT: 10104, CONF_TCP_PORT: 10104})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**ACCOUNT, "users": "501: Mikkel\nwho even knows"}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"users": "invalid_users"}
+
+
+async def test_flow_rejects_duplicate_user_numbers(hass: HomeAssistant) -> None:
+    """The same number twice is a typo, not an instruction to overwrite."""
+    result = await _start(hass, {CONF_UDP_PORT: 10105, CONF_TCP_PORT: 10105})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**ACCOUNT, "users": "501: Mikkel\n501: Anna"}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"users": "invalid_users"}
+
+
 async def test_invalid_bind_host(hass: HomeAssistant) -> None:
     """A hostname is rejected because the receiver binds an address."""
     result = await _start(hass, {CONF_BIND_HOST: "not-an-ip"})
@@ -363,6 +404,63 @@ async def test_options_edit_account(hass: HomeAssistant) -> None:
         result["flow_id"], {**ACCOUNT, "name": "Back door"}
     )
     assert result["data"][CONF_ACCOUNTS][0]["name"] == "Back door"
+
+
+async def test_options_edit_shows_existing_users(hass: HomeAssistant) -> None:
+    """Reopening an account shows the user list as text, ready to edit."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            **RECEIVER,
+            CONF_ACCOUNTS: [{**ACCOUNT, "users": {"501": "Mikkel", "502": "Anna"}}],
+        },
+        options={},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+
+    default = result["data_schema"]({})["users"]
+    assert default == "501: Mikkel\n502: Anna"
+
+    # Editing one line leaves the rest intact.
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**ACCOUNT, "users": "501: Mikkel\n502: Anna B"}
+    )
+    assert result["data"][CONF_ACCOUNTS][0]["users"] == {
+        "501": "Mikkel",
+        "502": "Anna B",
+    }
+
+
+async def test_options_edit_keeps_a_bad_user_list_on_screen(
+    hass: HomeAssistant,
+) -> None:
+    """A rejected list is shown back as typed, not silently emptied."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={**RECEIVER, CONF_ACCOUNTS: [dict(ACCOUNT)]}, options={}
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**ACCOUNT, "users": "501: Mikkel\nnonsense"}
+    )
+
+    assert result["errors"] == {"users": "invalid_users"}
+    assert result["data_schema"]({})["users"] == "501: Mikkel\nnonsense"
 
 
 async def test_options_edit_with_no_accounts_aborts(hass: HomeAssistant) -> None:

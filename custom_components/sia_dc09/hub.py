@@ -38,6 +38,7 @@ from .const import (
     CONF_TEST_CODES_OVERRIDE,
     CONF_UDP_PORT,
     CONF_UNKNOWN_ACCOUNT_POLICY,
+    CONF_USERS,
     DEFAULT_BIND_HOST,
     DEFAULT_HEARTBEAT_TIMEOUT,
     DEFAULT_IGNORE_TIMESTAMPS,
@@ -58,11 +59,12 @@ from .const import (
     TIMEBAND_PAST,
 )
 from .dc09 import ReceivedMessage, parse_key
+from .discovery import UnknownAccountLog
 from .listener import Dc09Receiver, ReceiverConfig
 from .models import SiaDc09Event, build_event
 from .state_machine import AccountState, SiaStatus, StatusMapping, apply_message
 from .store import ActivityStore
-from .utils import event_to_record, normalise_account
+from .utils import clean_users, event_to_record, normalise_account
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,6 +85,8 @@ class AccountConfig:
     key: bytes | None = None
     heartbeat_timeout: int = DEFAULT_HEARTBEAT_TIMEOUT
     ignore_timestamps: bool = DEFAULT_IGNORE_TIMESTAMPS
+    #: User numbers mapped to the names they should be shown as.
+    users: dict[str, str] = field(default_factory=dict)
     mapping: StatusMapping = field(default_factory=StatusMapping.build)
 
     @classmethod
@@ -106,6 +110,7 @@ class AccountConfig:
                 CONF_IGNORE_TIMESTAMPS,
                 False if key is not None else DEFAULT_IGNORE_TIMESTAMPS,
             ),
+            users=clean_users(data.get(CONF_USERS)),
             mapping=StatusMapping.build(
                 data.get(CONF_STATUS_MAP_OVERRIDE),
                 data.get(CONF_TEST_CODES_OVERRIDE),
@@ -124,8 +129,9 @@ class SiaDc09Hub:
         self.states: dict[str, AccountState] = {}
         self.store = ActivityStore(hass, entry.entry_id)
 
-        #: Accounts seen on the wire that are not configured, and how often.
-        self.unknown_accounts: dict[str, int] = {}
+        #: Accounts seen on the wire that are not configured, with the messages
+        #: they sent and where they came from.
+        self.unknown_accounts = UnknownAccountLog()
         self.message_count = 0
 
         self._receiver: Dc09Receiver | None = None
@@ -273,7 +279,9 @@ class SiaDc09Hub:
                 "; ".join(message.decode.errors),
             )
             if config is not None:
-                await self._async_record_only(build_event(message, account, None))
+                await self._async_record_only(
+                    build_event(message, account, None, config.users)
+                )
             return
 
         if config is None:
@@ -307,7 +315,7 @@ class SiaDc09Hub:
         )
         self.states[account] = transition.state
 
-        event = build_event(message, account, transition)
+        event = build_event(message, account, transition, config.users)
         await self._async_publish(event)
 
     # --- publishing ----------------------------------------------------------
@@ -352,11 +360,17 @@ class SiaDc09Hub:
         self, account: str, message: ReceivedMessage
     ) -> None:
         """Apply the configured policy to an account we do not monitor."""
-        self.unknown_accounts[account] = self.unknown_accounts.get(account, 0) + 1
         policy = self.unknown_account_policy
 
         if policy == POLICY_IGNORE:
+            # Deliberately records nothing at all: this policy exists so a
+            # receiver exposed to noisy neighbours can be told to shut up.
             return
+
+        event = build_event(message, account, None)
+        # Kept in memory rather than only counted, so the user can see who is
+        # transmitting and what they said without turning on debug logging.
+        self.unknown_accounts.record(account, event)
 
         if policy == POLICY_AUTO_CREATE:
             _LOGGER.info("Adding account %s seen on the wire", account)
@@ -367,14 +381,17 @@ class SiaDc09Hub:
             # The options update listener reloads the entry, which replays
             # nothing; log the message that prompted the creation so it is not
             # lost entirely.
-            await self.store.async_add(
-                event_to_record(build_event(message, account, None))
-            )
+            await self.store.async_add(event_to_record(event))
             return
 
         # POLICY_DISCOVER: surface it, but change nothing automatically.
-        _LOGGER.debug("Message from unconfigured account %s", account)
-        await self._async_publish(build_event(message, account, None))
+        _LOGGER.debug(
+            "Message from unconfigured account %s via %s from %s",
+            account,
+            message.transport,
+            message.remote_ip,
+        )
+        await self._async_publish(event)
 
     def _timestamp_is_acceptable(
         self, config: AccountConfig, message: ReceivedMessage
@@ -482,9 +499,14 @@ class SiaDc09Hub:
         """Return unconfigured accounts seen on the wire, busiest first."""
         if self.unknown_account_policy == POLICY_IGNORE:
             return []
-        return sorted(
-            self.unknown_accounts, key=self.unknown_accounts.get, reverse=True
-        )
+        return [record.account for record in self.unknown_accounts.busiest()]
+
+    @property
+    def unknown_account_details(self) -> list[dict[str, Any]]:
+        """Return what has been heard from each unconfigured account."""
+        if self.unknown_account_policy == POLICY_IGNORE:
+            return []
+        return self.unknown_accounts.as_list()
 
 
 __all__ = [

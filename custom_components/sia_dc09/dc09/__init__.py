@@ -29,7 +29,12 @@ from .constants import (
 )
 from .crc import crc16, crc16_hex
 from .crypto import Dc09CryptoError, decrypt_body, encrypt_body, parse_key
-from .enrich import enrich
+from .enrich import (
+    enrich,
+    normalise_user_number,
+    summarise_with_user_names,
+    user_number_of,
+)
 from .frame import Dc09Header, Dc09ParseError, build_frame, parse_frame, peek_header
 from .models import (
     AlarmEvent,
@@ -110,6 +115,7 @@ __all__ = [
     "extract_frames",
     "format_timestamp",
     "lookup_sia_code",
+    "normalise_user_number",
     "parse_cid_payload",
     "parse_frame",
     "parse_key",
@@ -118,9 +124,11 @@ __all__ = [
     "peek_header",
     "severity_for",
     "sia_codes",
+    "summarise_with_user_names",
     "to_display_text",
     "to_hex",
     "to_printable",
+    "user_number_of",
     "wire_to_bytes",
 ]
 

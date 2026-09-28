@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import socket
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -34,6 +35,7 @@ from .const import (
     CONF_TCP_PORT,
     CONF_UDP_PORT,
     CONF_UNKNOWN_ACCOUNT_POLICY,
+    CONF_USERS,
     DEFAULT_BIND_HOST,
     DEFAULT_HEARTBEAT_TIMEOUT,
     DEFAULT_IGNORE_TIMESTAMPS,
@@ -47,13 +49,23 @@ from .const import (
     DOMAIN,
     UNKNOWN_ACCOUNT_POLICIES,
 )
-from .utils import is_valid_account, is_valid_key, normalise_account
+from .utils import (
+    format_users,
+    is_valid_account,
+    is_valid_key,
+    normalise_account,
+    parse_users,
+)
 
 ARM_TARGET_SELECTOR = selector.EntitySelector(
     selector.EntitySelectorConfig(
         domain=["script", "scene", "button", "input_button", "switch"]
     )
 )
+
+#: Panels report who armed or disarmed as a bare number, so the list of users
+#: is free text: one ``number = name`` pair per line.
+USER_LIST_SELECTOR = selector.TextSelector(selector.TextSelectorConfig(multiline=True))
 
 
 def receiver_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
@@ -102,6 +114,18 @@ def receiver_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     )
 
 
+def _users_text(value: Any) -> str:
+    """Return the user list as the text the form edits.
+
+    Stored accounts hold a mapping, but a form redisplayed after a validation
+    error holds whatever was typed, which must come back unaltered so the
+    mistake is still visible.
+    """
+    if isinstance(value, Mapping):
+        return format_users(value)
+    return value if isinstance(value, str) else ""
+
+
 def account_schema(
     defaults: dict[str, Any] | None = None, *, editing: bool = False
 ) -> vol.Schema:
@@ -127,6 +151,9 @@ def account_schema(
             CONF_HEARTBEAT_TIMEOUT,
             default=defaults.get(CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT),
         ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
+        vol.Optional(
+            CONF_USERS, default=_users_text(defaults.get(CONF_USERS))
+        ): USER_LIST_SELECTOR,
     }
     if editing:
         schema[
@@ -208,6 +235,10 @@ def validate_account(
     if (key := (data.get(CONF_ENCRYPTION_KEY) or "").strip()) and not is_valid_key(key):
         errors[CONF_ENCRYPTION_KEY] = "invalid_key"
 
+    users = data.get(CONF_USERS)
+    if isinstance(users, str) and parse_users(users)[1]:
+        errors[CONF_USERS] = "invalid_users"
+
     return errors
 
 
@@ -248,6 +279,8 @@ def clean_account(
     }
     if key:
         cleaned[CONF_ENCRYPTION_KEY] = key
+    if users := parse_users(_users_text(data.get(CONF_USERS)))[0]:
+        cleaned[CONF_USERS] = users
     for target in TARGET_KEYS:
         if value := (data.get(target) or "").strip():
             cleaned[target] = value

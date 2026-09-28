@@ -62,8 +62,9 @@ Everything is configured in the UI; there is no YAML.
 you have not configured:
 
 - **Discover** — acknowledge it and list it on the *Unknown accounts* sensor,
-  but create nothing. This is the default and is how you find out what a panel
-  is actually transmitting.
+  together with the messages it sent and the address they came from, but create
+  nothing. This is the default and is how you find out what a panel is actually
+  transmitting. See *Identifying an unknown account*, below.
 - **Ignore** — answer with a DUH so the panel stops retrying, and record
   nothing.
 - **Create automatically** — add the account to the configuration and reload.
@@ -76,8 +77,39 @@ you have not configured:
 | Name | Used for the device and all of its entities. |
 | Encryption key | Optional. 32, 48 or 64 hexadecimal characters (128, 192 or 256 bit). |
 | Heartbeat timeout | Minutes of silence before the account is marked offline. Default 90. |
+| Users | Optional. One `number: name` per line. See *User names*, below. |
 | Ignore message timestamps | On by default. Turn it off only if the panel's clock is reliably synchronised; otherwise its messages will be rejected as replays. |
 | Arm/disarm targets | Optional. See *Arming*, below. |
+
+### User names
+
+Panels identify whoever armed or disarmed by number, so an event reads
+`Closing Report - User number 501 (area 1)`. Give the numbers names, one per
+line, in the account's **Users** box:
+
+```
+501: Mikkel
+502: Anna
+503 = Guest cleaner
+```
+
+Either `:` or `=` separates the number from the name, and leading zeros are
+ignored, so `501`, `0501` and `00501` are the same person — panels are not
+consistent about padding. The same event then reads:
+
+```
+Closing Report - User Mikkel (area 1)
+```
+
+The name is applied wherever the event is shown: the activity sensor and its
+recent-event attributes, the stored activity log, and the `user_name` field of
+the bus event. The raw `user_number` is kept alongside it, so automations can
+keep matching on the number.
+
+Only fields the protocol identifies as a user number are renamed. A zone number
+that happens to be 501 stays a zone, and codes where the protocol cannot say
+whether a number is a zone or a user are left alone — renaming the wrong thing
+is worse than renaming nothing.
 
 ## Entities
 
@@ -169,6 +201,8 @@ automation:
 | `sequence` | `"0001"` | |
 | `ri` | `"1"` | Receiver identifier within the message. |
 | `id` | `null` | User or card identifier. |
+| `user_number` | `"501"` | The user the event refers to, when there is one. |
+| `user_name` | `"Mikkel"` | The name configured for that number, if any. |
 | `zone` | `"001"` | The point or zone the code refers to. |
 | `partition` | `null` | Area, where the panel reports one. |
 | `event_qualifier` | `"N"` | SIA modifier, or the Contact ID qualifier. |
@@ -236,6 +270,30 @@ reconfiguring anything.
 key, unencrypted messages for it are rejected and NAKed on purpose - see
 [Security](#security). Either configure the key on the panel too, or clear it
 here.
+
+### Identifying an unknown account
+
+The *Unknown accounts* sensor counts accounts that are transmitting but are not
+configured. A count on its own says nothing useful, so the sensor's attributes
+carry the detail:
+
+- `details` — one entry per account, busiest first, each with `message_count`,
+  `first_seen`, `last_seen`, the originating addresses in `remote_ips`, and the
+  most recent messages in `recent_messages` with their summary, code, transport
+  and port.
+- `dropped_messages` — messages discarded because too many distinct account
+  numbers had already been seen. Anything other than zero means something is
+  inventing account numbers at your receiver, not that a panel is
+  misconfigured.
+
+That is usually enough to tell a panel you forgot to add apart from traffic
+that does not belong to you. The full history, including the raw frames, is in
+the integration's diagnostics, and the stored messages can be read back with
+`sia_dc09.get_activity` using the unknown account number — it does not have to
+be configured first.
+
+Nothing an unconfigured account sends is ever allowed to change an entity, and
+under the **Ignore** policy nothing is recorded at all.
 
 ## Security
 
