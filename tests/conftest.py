@@ -7,8 +7,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+import pytest_socket
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# ``pytest-homeassistant-custom-component`` calls ``pytest_socket.disable_socket``
+# from its own ``pytest_runtest_setup`` hook, which runs after any conftest hook
+# but before fixtures are built. That is too early to undo from a hook of our
+# own, so the guard is neutralised outright. This integration is a network
+# receiver whose tests bind real loopback sockets, and on Windows even
+# constructing an asyncio event loop needs an AF_INET socketpair.
+pytest_socket.disable_socket = lambda *args, **kwargs: None
+pytest_socket.enable_socket()
 
 from custom_components.sia_dc09.dc09 import (  # noqa: E402
     DecodeResult,

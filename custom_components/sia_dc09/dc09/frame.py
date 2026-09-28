@@ -143,6 +143,54 @@ def parse_frame(
 
 
 @dataclass(frozen=True, slots=True)
+class Dc09Header:
+    """The cleartext header of a DC-09 message.
+
+    Readable without an AES key, because DC-09 leaves the header in the clear
+    even for encrypted messages. That is what makes per-account keys possible:
+    the receiver learns which account is talking before it has to decrypt.
+    """
+
+    token: str
+    protocol_token: str
+    encrypted: bool
+    sequence: str
+    receiver: str | None
+    line_prefix: str
+    account: str
+
+
+def peek_header(datagram: bytes) -> Dc09Header | None:
+    """Read a message's header without decrypting or validating it.
+
+    Returns ``None`` when the datagram is too malformed to yield a header.
+    """
+    text = bytes_to_wire(datagram)
+    if text.startswith(LF):
+        text = text[1:]
+    if text.endswith(CR):
+        text = text[:-1]
+    if len(text) < 9:
+        return None
+
+    try:
+        header = _parse_header(text[8:])
+    except Dc09ParseError:
+        return None
+
+    encrypted = header.token.startswith("*")
+    return Dc09Header(
+        token=header.token,
+        protocol_token=header.token[1:] if encrypted else header.token,
+        encrypted=encrypted,
+        sequence=header.sequence,
+        receiver=header.receiver,
+        line_prefix=header.line_prefix,
+        account=header.account,
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class _ParsedHeader:
     token: str
     sequence: str

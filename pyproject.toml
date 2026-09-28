@@ -1,0 +1,49 @@
+[project]
+name = "sia-dc09"
+version = "0.1.0"
+description = "SIA DC-09 Control Center receiver for Home Assistant"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# pytest-socket, pulled in by pytest-homeassistant-custom-component, blocks
+# socket creation outright. Windows event loops build their self-pipe from an
+# AF_INET socketpair, and this integration is a network receiver whose tests
+# bind real loopback sockets, so the guard is switched off here.
+addopts = "-p no:pytest_socket --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning:pytest_asyncio.*",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "B",
+    "C4",
+    "SIM",
+    "RUF",
+    "ASYNC",
+    "S",
+]
+ignore = [
+    "D203",
+    "D213",
+    "S101",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "S105", "S106"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

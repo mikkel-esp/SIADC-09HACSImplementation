@@ -30,7 +30,7 @@ from .constants import (
 from .crc import crc16, crc16_hex
 from .crypto import Dc09CryptoError, decrypt_body, encrypt_body, parse_key
 from .enrich import enrich
-from .frame import Dc09ParseError, build_frame, parse_frame
+from .frame import Dc09Header, Dc09ParseError, build_frame, parse_frame, peek_header
 from .models import (
     AlarmEvent,
     DecodedPayload,
@@ -111,6 +111,8 @@ __all__ = [
     "lookup_sia_code",
     "parse_cid_payload",
     "parse_frame",
+    "peek_header",
+    "Dc09Header",
     "parse_key",
     "parse_sia_payload",
     "parse_timestamp",
