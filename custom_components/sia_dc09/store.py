@@ -209,6 +209,44 @@ class ActivityStore:
         """Flush anything still buffered."""
         await self.async_flush()
 
+    async def async_remove(self) -> None:
+        """Delete this entry's stored activity, and the file if it is the last.
+
+        The database is shared by every config entry, so removing one receiver
+        must not take another's history with it. When nothing is left the file
+        goes too, including the write-ahead sidecars, so removing the
+        integration really does leave nothing behind.
+        """
+        self._pending.clear()
+        await self.hass.async_add_executor_job(self._remove)
+
+    def _remove(self) -> None:
+        if not self.path.exists():
+            return
+        try:
+            with closing(self._connect()) as conn:
+                conn.execute("DELETE FROM events WHERE entry_id = ?", (self.entry_id,))
+                conn.commit()
+                remaining = int(
+                    conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+                )
+                if remaining:
+                    # Another receiver is still using the file. Reclaim the
+                    # space this entry was holding rather than leaving it.
+                    conn.execute("VACUUM")
+                    return
+        except sqlite3.Error:
+            _LOGGER.exception("Failed to delete stored activity for this entry")
+            return
+
+        for path in (
+            self.path,
+            self.path.with_name(f"{self.path.name}-wal"),
+            self.path.with_name(f"{self.path.name}-shm"),
+        ):
+            with suppress(OSError):
+                path.unlink(missing_ok=True)
+
     # --- writing -------------------------------------------------------------
 
     def queue(self, record: ActivityRecord) -> None:
