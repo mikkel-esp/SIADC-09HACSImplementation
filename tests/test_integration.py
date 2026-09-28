@@ -25,6 +25,7 @@ from custom_components.sia_dc09.const import (
     CONF_TCP_PORT,
     CONF_UDP_PORT,
     CONF_UNKNOWN_ACCOUNT_POLICY,
+    CONF_USERS,
     DOMAIN,
     POLICY_IGNORE,
     SIA_DC09_EVENT_ALL,
@@ -292,6 +293,59 @@ async def test_unknown_account_is_discovered(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.mock_title_unknown_accounts").state == "1"
 
 
+async def test_unknown_account_shows_messages_and_source(hass: HomeAssistant) -> None:
+    """Counting unknown accounts is useless without the message and the sender."""
+    entry = await make_entry(hass)
+
+    await send_udp(hass, entry, body("BA001", account="9999"))
+    await send_udp(hass, entry, body("CL501", account="9999", sequence="0002"))
+
+    state = hass.states.get("sensor.mock_title_unknown_accounts")
+    assert state.state == "1"
+
+    detail = state.attributes["details"][0]
+    assert detail["account"] == "9999"
+    assert detail["message_count"] == 2
+    assert list(detail["remote_ips"]) == ["127.0.0.1"]
+
+    # Newest first, so the most recent message is the one you read.
+    summaries = [message["summary"] for message in detail["recent_messages"]]
+    assert summaries[0].startswith("Closing Report")
+    assert summaries[1].startswith("Burglary Alarm")
+    assert detail["recent_messages"][0]["remote_ip"] == "127.0.0.1"
+    assert detail["recent_messages"][0]["transport"] == "udp"
+
+
+async def test_unknown_account_activity_is_queryable(hass: HomeAssistant) -> None:
+    """Stored messages from an unconfigured account can still be read back."""
+    entry = await make_entry(hass)
+
+    await send_udp(hass, entry, body("BA001", account="9999"))
+
+    events = await hass.services.async_call(
+        DOMAIN,
+        "get_activity",
+        {"account": "9999"},
+        blocking=True,
+        return_response=True,
+    )
+    assert events["count"] == 1
+    assert events["events"][0]["account"] == "9999"
+
+
+async def test_unknown_accounts_are_capped(hass: HomeAssistant) -> None:
+    """An attacker inventing account numbers cannot grow memory without limit."""
+    entry = await make_entry(hass)
+    hub = hass.data[DOMAIN][entry.entry_id]
+    hub.unknown_accounts._max_accounts = 2
+
+    for index in range(4):
+        await send_udp(hass, entry, body("BA001", account=f"900{index}"))
+
+    assert len(hub.unknown_accounts) == 2
+    assert hub.unknown_accounts.dropped == 2
+
+
 async def test_unknown_account_ignored(hass: HomeAssistant) -> None:
     """Under the ignore policy nothing is recorded and a DUH is sent."""
     entry = await make_entry(hass, **{CONF_UNKNOWN_ACCOUNT_POLICY: POLICY_IGNORE})
@@ -301,6 +355,73 @@ async def test_unknown_account_ignored(hass: HomeAssistant) -> None:
 
     hub = hass.data[DOMAIN][entry.entry_id]
     assert hub.discovered_accounts == []
+    assert len(hub.unknown_accounts) == 0
+    assert (
+        hass.states.get("sensor.mock_title_unknown_accounts").attributes["details"]
+        == []
+    )
+
+
+async def test_user_number_is_named(hass: HomeAssistant) -> None:
+    """A configured user number reads as a name everywhere it is shown."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_USERS: {"501": "Mikkel"},
+            }
+        ],
+    )
+
+    await send_udp(hass, entry, body("CL501"))
+
+    activity = hass.states.get("sensor.front_door_last_activity")
+    assert activity.state == "Closing Report - User Mikkel (area 1)"
+    latest = activity.attributes["events"][0]
+    assert latest["user_number"] == "501"
+    assert latest["user_name"] == "Mikkel"
+
+
+async def test_unnamed_user_number_is_left_alone(hass: HomeAssistant) -> None:
+    """A number with no name keeps its number rather than reading oddly."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_USERS: {"501": "Mikkel"},
+            }
+        ],
+    )
+
+    await send_udp(hass, entry, body("CL777"))
+
+    activity = hass.states.get("sensor.front_door_last_activity")
+    assert activity.state == "Closing Report - User number 777 (area 1)"
+    assert activity.attributes["events"][0]["user_name"] is None
+
+
+async def test_zone_number_is_never_named(hass: HomeAssistant) -> None:
+    """A zone that happens to match a user number must not be renamed."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_USERS: {"501": "Mikkel"},
+            }
+        ],
+    )
+
+    await send_udp(hass, entry, body("BA501"))
+
+    activity = hass.states.get("sensor.front_door_last_activity")
+    assert "Mikkel" not in activity.state
+    assert activity.state == "Burglary Alarm - Zone or point 501 (area 1)"
 
 
 async def test_bad_crc_is_nakked(hass: HomeAssistant) -> None:

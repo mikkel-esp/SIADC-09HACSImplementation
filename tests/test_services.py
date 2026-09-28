@@ -202,6 +202,43 @@ async def test_diagnostics_redacts_the_key(hass: HomeAssistant) -> None:
     assert diagnostics["recent_activity"][0]["remote_ip"] == "**REDACTED**"
 
 
+async def test_diagnostics_hides_user_names_but_keeps_numbers(
+    hass: HomeAssistant,
+) -> None:
+    """Diagnostics get pasted into public issues, so names must not travel."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {"account": ACCOUNT, "name": "Front door", "users": {"501": "Mikkel"}}
+        ],
+    )
+
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "Mikkel" not in str(diagnostics["entry"])
+    assert diagnostics["entry"]["accounts"][0]["users"] == ["501"]
+    assert diagnostics["accounts"][0]["named_users"] == 1
+
+
+async def test_diagnostics_reports_unknown_accounts(hass: HomeAssistant) -> None:
+    """The messages a stranger sent are what makes the count worth having."""
+    entry = await make_entry(hass)
+
+    await send_udp(hass, entry, body("BA001", account="9999"))
+
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+
+    [unknown] = diagnostics["unknown_accounts"]
+    assert unknown["account"] == "9999"
+    assert unknown["message_count"] == 1
+    assert unknown["remote_ips"] == "**REDACTED**"
+    message = unknown["recent_messages"][0]
+    assert message["summary"].startswith("Burglary Alarm")
+    assert message["remote_ip"] == "**REDACTED**"
+    # The raw frame is the last resort when a summary is not enough.
+    assert message["raw"]
+
+
 async def test_logbook_describes_an_event(hass: HomeAssistant) -> None:
     """A bus event becomes a readable logbook line."""
     from custom_components.sia_dc09.logbook import async_describe_events

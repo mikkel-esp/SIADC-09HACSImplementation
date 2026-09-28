@@ -8,6 +8,7 @@ payload Home Assistant's built-in ``sia`` integration produces.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -17,7 +18,9 @@ from .dc09 import (
     EnrichedEvent,
     EnrichedMessage,
     ReceivedMessage,
+    summarise_with_user_names,
     to_hex,
+    user_number_of,
 )
 from .state_machine import SiaStatus, StatusTransition
 
@@ -49,6 +52,11 @@ class SiaDc09Event:
     zone: str | None = None
     area: str | None = None
     user: str | None = None
+    #: The user this event is about, from either the ``id`` modifier or an
+    #: address field that is defined to carry a user number.
+    user_number: str | None = None
+    #: The configured name for :attr:`user_number`, if the account has one.
+    user_name: str | None = None
     partition: str | None = None
     event_qualifier: str | None = None
 
@@ -96,6 +104,8 @@ class SiaDc09Event:
             # --- additions ---------------------------------------------------
             "code_title": self.code_title,
             "summary": self.summary,
+            "user_number": self.user_number,
+            "user_name": self.user_name,
             "severity": self.severity,
             "category": self.category,
             "is_test": self.is_test,
@@ -134,12 +144,16 @@ def build_event(
     message: ReceivedMessage,
     account: str,
     transition: StatusTransition | None = None,
+    user_names: Mapping[str, str] | None = None,
 ) -> SiaDc09Event:
     """Turn a received message into the event entities and automations see.
 
     A message can technically carry several events. The first one drives the
     scalar fields, which matches how panels actually behave in practice; the
     status machine still folds in every event.
+
+    ``user_names`` maps user numbers to the names configured for the account,
+    so "User number 501" reads as "User Mikkel" wherever the summary is shown.
     """
     frame = message.decode.frame
     payload = message.decode.payload
@@ -158,6 +172,9 @@ def build_event(
         )
         changed = transition.changed
 
+    user_number = user_number_of(enriched_event) if enriched_event is not None else None
+    user_name = user_names.get(user_number) if user_names and user_number else None
+
     return SiaDc09Event(
         account=account,
         received_at=message.received_at,
@@ -171,12 +188,16 @@ def build_event(
         code=event.code if event is not None else None,
         code_title=enriched_event.title if enriched_event is not None else None,
         message=event.text if event is not None else None,
-        summary=message.enriched.summary if message.enriched is not None else "",
+        summary=summarise_with_user_names(message.enriched, user_names)
+        if message.enriched is not None
+        else "",
         severity=enriched_event.severity if enriched_event is not None else "info",
         category=enriched_event.category if enriched_event is not None else "other",
         zone=event.address if event is not None else None,
         area=event.area if event is not None else None,
         user=event.user if event is not None else None,
+        user_number=user_number,
+        user_name=user_name,
         partition=event.partition if event is not None else None,
         event_qualifier=event.qualifier if event is not None else None,
         timestamp=frame.timestamp_utc if frame is not None else None,

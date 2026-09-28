@@ -28,8 +28,10 @@ from .const import (
     KEY_MESSAGES,
     KEY_STATUS,
     KEY_UNKNOWN_ACCOUNTS,
+    POLICY_IGNORE,
     SIA_DC09_HUB_UPDATED,
 )
+from .discovery import ATTRIBUTE_ACCOUNTS, ATTRIBUTE_MESSAGES
 from .entity import SiaDc09Entity
 from .hub import AccountConfig, SiaDc09Hub
 from .models import SiaDc09Event
@@ -189,6 +191,8 @@ class SiaDc09ActivitySensor(SiaDc09Entity, SensorEntity):
                 "zone": event.zone,
                 "area": event.area,
                 "user": event.user,
+                "user_number": event.user_number,
+                "user_name": event.user_name,
                 "status_after": event.status_after,
             }
         )
@@ -282,9 +286,22 @@ class SiaDc09UnknownAccountsSensor(SiaDc09HubSensor):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """List the unconfigured accounts and how often each reported."""
+        """List the unconfigured accounts, where they came from and what they said.
+
+        Only the most recent few messages of the busiest few accounts are
+        included: state attributes are written to the recorder on every
+        change, so the payload has to stay small. Diagnostics carry the lot.
+        """
         return {
             "accounts": self.hub.discovered_accounts,
-            "message_counts": dict(self.hub.unknown_accounts),
+            "message_counts": self.hub.unknown_accounts.message_counts(),
+            "details": self.hub.unknown_accounts.as_list(
+                accounts=ATTRIBUTE_ACCOUNTS,
+                messages=ATTRIBUTE_MESSAGES,
+                include_raw=False,
+            )
+            if self.hub.unknown_account_policy != POLICY_IGNORE
+            else [],
+            "dropped_messages": self.hub.unknown_accounts.dropped,
             "policy": self.hub.unknown_account_policy,
         }

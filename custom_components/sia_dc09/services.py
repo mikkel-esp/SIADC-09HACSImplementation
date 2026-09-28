@@ -87,12 +87,25 @@ def _hubs(hass: HomeAssistant) -> list[Any]:
     return list(hass.data.get(DOMAIN, {}).values())
 
 
-def _hub_for_account(hass: HomeAssistant, account: str):
-    """Return the hub that monitors an account."""
+def _hub_for_account(
+    hass: HomeAssistant, account: str, *, configured_only: bool = True
+):
+    """Return the hub that monitors an account.
+
+    ``configured_only`` may be relaxed for read-only lookups: an account can
+    appear in the activity log without being configured, because the discover
+    policy stores what unconfigured panels send, and refusing to query it would
+    hide exactly the messages a user is trying to identify. Anything that
+    changes state must stay strict.
+    """
     wanted = normalise_account(account)
     for hub in _hubs(hass):
         if wanted in hub.accounts:
             return hub
+    if not configured_only:
+        for hub in _hubs(hass):
+            if wanted in hub.unknown_accounts:
+                return hub
     raise ServiceValidationError(f"No configured SIA DC-09 account named {account}")
 
 
@@ -101,7 +114,11 @@ async def _async_get_activity(call: ServiceCall) -> ServiceResponse:
     account = call.data.get(ATTR_ACCOUNT)
     events: list[dict[str, Any]] = []
 
-    hubs = [_hub_for_account(call.hass, account)] if account else _hubs(call.hass)
+    hubs = (
+        [_hub_for_account(call.hass, account, configured_only=False)]
+        if account
+        else _hubs(call.hass)
+    )
     for hub in hubs:
         events.extend(
             await hub.store.async_get_activity(
@@ -122,7 +139,11 @@ async def _async_get_activity(call: ServiceCall) -> ServiceResponse:
 async def _async_clear_activity(call: ServiceCall) -> None:
     """Delete stored activity, for one account or for everything."""
     account = call.data.get(ATTR_ACCOUNT)
-    hubs = [_hub_for_account(call.hass, account)] if account else _hubs(call.hass)
+    hubs = (
+        [_hub_for_account(call.hass, account, configured_only=False)]
+        if account
+        else _hubs(call.hass)
+    )
     for hub in hubs:
         deleted = await hub.store.async_clear(
             normalise_account(account) if account else None
