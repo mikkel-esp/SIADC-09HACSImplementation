@@ -1,0 +1,1832 @@
+{
+  "AA": {
+    "code": "AA",
+    "title": "Alarm – Panel Substitution",
+    "description": "An attempt to substitute an alternate alarm panel for a secure panel has been made",
+    "addressMeaning": "Condition number"
+  },
+  "AB": {
+    "code": "AB",
+    "title": "Abort",
+    "description": "An event message was not sent due to User action",
+    "addressMeaning": "Zone or point"
+  },
+  "AN": {
+    "code": "AN",
+    "title": "Analog Restoral",
+    "description": "An analog fire sensor has been restored to normal operation",
+    "addressMeaning": "Zone or point"
+  },
+  "AR": {
+    "code": "AR",
+    "title": "AC Restoral",
+    "description": "AC power has been restored",
+    "addressMeaning": "Unused"
+  },
+  "AS": {
+    "code": "AS",
+    "title": "Analog Service",
+    "description": "An analog fire sensor needs to be cleaned or calibrated",
+    "addressMeaning": "Zone or point"
+  },
+  "AT": {
+    "code": "AT",
+    "title": "AC Trouble",
+    "description": "AC power has been failed",
+    "addressMeaning": "Unused"
+  },
+  "BA": {
+    "code": "BA",
+    "title": "Burglary Alarm",
+    "description": "Burglary zone has been violated while armed",
+    "addressMeaning": "Zone or point"
+  },
+  "BB": {
+    "code": "BB",
+    "title": "Burglary Bypass",
+    "description": "Burglary zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "BC": {
+    "code": "BC",
+    "title": "Burglary Cancel",
+    "description": "Alarm has been cancelled by authorized user",
+    "addressMeaning": "User number"
+  },
+  "BD": {
+    "code": "BD",
+    "title": "Swinger Trouble",
+    "description": "A non-fire zone has been violated after a Swinger Shutdown on the zone",
+    "addressMeaning": "Zone or point"
+  },
+  "BE": {
+    "code": "BE",
+    "title": "Swinger Trouble Restore",
+    "description": "A non-fire zone restores to normal from a Swinger Trouble state",
+    "addressMeaning": "Zone or point"
+  },
+  "BG": {
+    "code": "BG",
+    "title": "Unverified Event - Burglary",
+    "description": "A point assigned to a Cross Point group has gone into alarm but the Cross Point remained normal",
+    "addressMeaning": "Zone or point"
+  },
+  "BH": {
+    "code": "BH",
+    "title": "Burglary Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "BJ": {
+    "code": "BJ",
+    "title": "Burglary Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "BM": {
+    "code": "BM",
+    "title": "Burglary Alarm - Cross Point",
+    "description": "Burglary alarm w/cross point also in alarm - alarm verified",
+    "addressMeaning": "Zone or point"
+  },
+  "BR": {
+    "code": "BR",
+    "title": "Burglary Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "BS": {
+    "code": "BS",
+    "title": "Burglary Supervisory",
+    "description": "Unsafe intrusion detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "BT": {
+    "code": "BT",
+    "title": "Burglary Trouble",
+    "description": "Burglary zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "BU": {
+    "code": "BU",
+    "title": "Burglary Unbypass",
+    "description": "Zone bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "BV": {
+    "code": "BV",
+    "title": "Burglary Verified",
+    "description": "A burglary alarm has occurred and been verified within programmed conditions. (zone or point not sent)",
+    "addressMeaning": "Area number"
+  },
+  "BX": {
+    "code": "BX",
+    "title": "Burglary Test",
+    "description": "Burglary zone activated during testing",
+    "addressMeaning": "Zone or point"
+  },
+  "BZ": {
+    "code": "BZ",
+    "title": "Missing Supervision",
+    "description": "A non-fire Supervisory point has gone missing",
+    "addressMeaning": "Zone or point"
+  },
+  "CA": {
+    "code": "CA",
+    "title": "Automatic Closing",
+    "description": "System armed automatically",
+    "addressMeaning": "Area number"
+  },
+  "CD": {
+    "code": "CD",
+    "title": "Closing Delinquent",
+    "description": "The system has not been armed for a programmed amount of time",
+    "addressMeaning": "Area number"
+  },
+  "CE": {
+    "code": "CE",
+    "title": "Closing Extend",
+    "description": "Extend closing time",
+    "addressMeaning": "User number"
+  },
+  "CF": {
+    "code": "CF",
+    "title": "Forced Closing",
+    "description": "System armed, some zones not ready",
+    "addressMeaning": "User number"
+  },
+  "CG": {
+    "code": "CG",
+    "title": "Close Area",
+    "description": "System has been partially armed",
+    "addressMeaning": "Area number"
+  },
+  "CI": {
+    "code": "CI",
+    "title": "Fail to Close",
+    "description": "An area has not been armed at the end of the closing window",
+    "addressMeaning": "Area number"
+  },
+  "CJ": {
+    "code": "CJ",
+    "title": "Late Close",
+    "description": "An area was armed after the closing window",
+    "addressMeaning": "User number"
+  },
+  "CK": {
+    "code": "CK",
+    "title": "Early Close",
+    "description": "An area was armed before the closing window",
+    "addressMeaning": "User number"
+  },
+  "CL": {
+    "code": "CL",
+    "title": "Closing Report",
+    "description": "System armed, normal",
+    "addressMeaning": "User number"
+  },
+  "CM": {
+    "code": "CM",
+    "title": "Missing Alarm - Recent Closing",
+    "description": "A point has gone missing within 2 minutes of closing",
+    "addressMeaning": "Zone or point"
+  },
+  "CO": {
+    "code": "CO",
+    "title": "Command Sent",
+    "description": "A command has been sent to an expansion/peripheral device",
+    "addressMeaning": "Condition number"
+  },
+  "CP": {
+    "code": "CP",
+    "title": "Automatic Closing",
+    "description": "System armed automatically",
+    "addressMeaning": "User number"
+  },
+  "CQ": {
+    "code": "CQ",
+    "title": "Remote Closing",
+    "description": "The system was armed from a remote location",
+    "addressMeaning": "User number"
+  },
+  "CR": {
+    "code": "CR",
+    "title": "Recent Closing",
+    "description": "An alarm occurred within five minutes after the system was closed",
+    "addressMeaning": "User number"
+  },
+  "CS": {
+    "code": "CS",
+    "title": "Closing Keyswitch",
+    "description": "Account has been armed by keyswitch",
+    "addressMeaning": "Zone or point"
+  },
+  "CT": {
+    "code": "CT",
+    "title": "Late to Open",
+    "description": "System was not disarmed on time",
+    "addressMeaning": "Area number"
+  },
+  "CW": {
+    "code": "CW",
+    "title": "Was Force Armed",
+    "description": "Header for a force armed session, forced point msgs may follow",
+    "addressMeaning": "Area number"
+  },
+  "CX": {
+    "code": "CX",
+    "title": "Custom Function Executed",
+    "description": "The panel has executed a preprogrammed set of instructions",
+    "addressMeaning": "Custom Function number"
+  },
+  "CZ": {
+    "code": "CZ",
+    "title": "Point Closing",
+    "description": "A point, as opposed to a whole area or account, has closed",
+    "addressMeaning": "Zone or point"
+  },
+  "DA": {
+    "code": "DA",
+    "title": "Card Assigned",
+    "description": "An access ID has been added to the controller",
+    "addressMeaning": "User number"
+  },
+  "DB": {
+    "code": "DB",
+    "title": "Card Deleted",
+    "description": "An access ID has been deleted from the controller",
+    "addressMeaning": "User number"
+  },
+  "DC": {
+    "code": "DC",
+    "title": "Access Closed",
+    "description": "Access to all users prohibited",
+    "addressMeaning": "Door number"
+  },
+  "DD": {
+    "code": "DD",
+    "title": "Access Denied",
+    "description": "Access denied, unknown code",
+    "addressMeaning": "Door number"
+  },
+  "DE": {
+    "code": "DE",
+    "title": "Request to Enter",
+    "description": "An access point was opened via a Request to Enter device",
+    "addressMeaning": "Door number"
+  },
+  "DF": {
+    "code": "DF",
+    "title": "Door Forced",
+    "description": "Door opened without access request",
+    "addressMeaning": "Door number"
+  },
+  "DG": {
+    "code": "DG",
+    "title": "Access Granted",
+    "description": "Door access granted",
+    "addressMeaning": "Door number"
+  },
+  "DH": {
+    "code": "DH",
+    "title": "Door Left Open - Restoral",
+    "description": "An access point in a Door Left Open state has restored",
+    "addressMeaning": "Door number"
+  },
+  "DI": {
+    "code": "DI",
+    "title": "Access Denied – Passback",
+    "description": "Access denied because credential has not exited area before attempting to re-enter same area",
+    "addressMeaning": "Door number"
+  },
+  "DJ": {
+    "code": "DJ",
+    "title": "Door Forced - Trouble",
+    "description": "An access point has been forced open in an unarmed area",
+    "addressMeaning": "Door number"
+  },
+  "DK": {
+    "code": "DK",
+    "title": "Access Lockout",
+    "description": "Access denied, known code",
+    "addressMeaning": "Door number"
+  },
+  "DL": {
+    "code": "DL",
+    "title": "Door Left Open - Alarm",
+    "description": "An open access point when open time expired in an armed area",
+    "addressMeaning": "Door number"
+  },
+  "DM": {
+    "code": "DM",
+    "title": "Door Left Open - Trouble",
+    "description": "An open access point when open time expired in an unarmed area",
+    "addressMeaning": "Door number"
+  },
+  "DN": {
+    "code": "DN",
+    "title": "Door Left Open (non-alarm, non-trouble)",
+    "description": "An access point was open when the door cycle time expired",
+    "addressMeaning": "Door number"
+  },
+  "DO": {
+    "code": "DO",
+    "title": "Access Open",
+    "description": "Access to authorized users allowed",
+    "addressMeaning": "Door number"
+  },
+  "DP": {
+    "code": "DP",
+    "title": "Access Denied - Unauthorized Time",
+    "description": "An access request was denied because the request is occurring outside the user’s authorized time window(s)",
+    "addressMeaning": "Door number"
+  },
+  "DQ": {
+    "code": "DQ",
+    "title": "Access Denied - Unauthorized Arming State",
+    "description": "An access request was denied because the user was not authorized in this area when the area was armed",
+    "addressMeaning": "Door number"
+  },
+  "DR": {
+    "code": "DR",
+    "title": "Door Restoral",
+    "description": "Access alarm/trouble condition eliminated",
+    "addressMeaning": "Door number"
+  },
+  "DS": {
+    "code": "DS",
+    "title": "Door Station",
+    "description": "Identifies door for next report",
+    "addressMeaning": "Door number"
+  },
+  "DT": {
+    "code": "DT",
+    "title": "Access Trouble",
+    "description": "Access system trouble",
+    "addressMeaning": "Unused"
+  },
+  "DU": {
+    "code": "DU",
+    "title": "Dealer ID",
+    "description": "Dealer ID number",
+    "addressMeaning": "Dealer ID"
+  },
+  "DV": {
+    "code": "DV",
+    "title": "Access Denied - Unauthorized Entry Level",
+    "description": "An access request was denied because the user is not authorized in this area",
+    "addressMeaning": "Door number"
+  },
+  "DW": {
+    "code": "DW",
+    "title": "Access Denied - Interlock",
+    "description": "An access request was denied because the doors associated Interlock point is open",
+    "addressMeaning": "Door number"
+  },
+  "DX": {
+    "code": "DX",
+    "title": "Request to Exit",
+    "description": "An access point was opened via a Request to Exit device",
+    "addressMeaning": "Door number"
+  },
+  "DY": {
+    "code": "DY",
+    "title": "Door Locked",
+    "description": "The door’s lock has been engaged",
+    "addressMeaning": "Door number"
+  },
+  "DZ": {
+    "code": "DZ",
+    "title": "Access Denied - Door Secured",
+    "description": "An access request was denied because the door has been placed in an Access Closed state",
+    "addressMeaning": "Door number"
+  },
+  "EA": {
+    "code": "EA",
+    "title": "Exit Alarm",
+    "description": "An exit zone remained violated at the end of the exit delay period",
+    "addressMeaning": "Zone or point"
+  },
+  "EE": {
+    "code": "EE",
+    "title": "Exit Error",
+    "description": "An exit zone remained violated at the end of the exit delay period",
+    "addressMeaning": "User number"
+  },
+  "EJ": {
+    "code": "EJ",
+    "title": "Expansion Tamper Restore",
+    "description": "Expansion device tamper restoral",
+    "addressMeaning": "Expansion device number"
+  },
+  "EM": {
+    "code": "EM",
+    "title": "Expansion Device Missing",
+    "description": "Expansion device missing",
+    "addressMeaning": "Expansion device number"
+  },
+  "EN": {
+    "code": "EN",
+    "title": "Expansion Missing Restore",
+    "description": "Expansion device communications re-established",
+    "addressMeaning": "Expansion device number"
+  },
+  "ER": {
+    "code": "ER",
+    "title": "Expansion Restoral",
+    "description": "Expansion device trouble eliminated",
+    "addressMeaning": "Expander number"
+  },
+  "ES": {
+    "code": "ES",
+    "title": "Expansion Device Tamper",
+    "description": "Expansion device enclosure tamper",
+    "addressMeaning": "Expansion device number"
+  },
+  "ET": {
+    "code": "ET",
+    "title": "Expansion Trouble",
+    "description": "Expansion device trouble",
+    "addressMeaning": "Expander number"
+  },
+  "EX": {
+    "code": "EX",
+    "title": "External Device Condition",
+    "description": "A specific reportable condition is detected on an external device",
+    "addressMeaning": "Device number"
+  },
+  "EZ": {
+    "code": "EZ",
+    "title": "Missing Alarm - Exit Error",
+    "description": "A point remained missing at the end of the exit delay period",
+    "addressMeaning": "Point number"
+  },
+  "FA": {
+    "code": "FA",
+    "title": "Fire Alarm",
+    "description": "Fire condition detected",
+    "addressMeaning": "Zone or point"
+  },
+  "FB": {
+    "code": "FB",
+    "title": "Fire Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "FC": {
+    "code": "FC",
+    "title": "Fire Cancel",
+    "description": "A Fire Alarm has been cancelled by an authorized person",
+    "addressMeaning": "Zone or point"
+  },
+  "FG": {
+    "code": "FG",
+    "title": "Unverified Event – Fire",
+    "description": "A point assigned to a Cross Point group has gone into alarm but the Cross Point remained normal",
+    "addressMeaning": "Zone or point"
+  },
+  "FH": {
+    "code": "FH",
+    "title": "Fire Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "FI": {
+    "code": "FI",
+    "title": "Fire Test Begin",
+    "description": "The transmitter area's fire test has begun",
+    "addressMeaning": "Area number"
+  },
+  "FJ": {
+    "code": "FJ",
+    "title": "Fire Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "FK": {
+    "code": "FK",
+    "title": "Fire Test End",
+    "description": "The transmitter area's fire test has ended",
+    "addressMeaning": "Area number"
+  },
+  "FL": {
+    "code": "FL",
+    "title": "Fire Alarm Silenced",
+    "description": "The fire panel’s sounder was silenced by command",
+    "addressMeaning": "Zone or point"
+  },
+  "FM": {
+    "code": "FM",
+    "title": "Fire Alarm - Cross Point",
+    "description": "Fire Alarm with Cross Point also in alarm verifying the Fire Alarm",
+    "addressMeaning": "Point number"
+  },
+  "FQ": {
+    "code": "FQ",
+    "title": "Fire Supervisory Trouble Restore",
+    "description": "A fire supervisory zone that was in trouble condition has now restored to normal",
+    "addressMeaning": "Zone or point"
+  },
+  "FR": {
+    "code": "FR",
+    "title": "Fire Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "FS": {
+    "code": "FS",
+    "title": "Fire Supervisory",
+    "description": "Unsafe fire detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "FT": {
+    "code": "FT",
+    "title": "Fire Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "FU": {
+    "code": "FU",
+    "title": "Fire Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "FV": {
+    "code": "FV",
+    "title": "Fire Supervision Restore",
+    "description": "A fire supervision zone that was in alarm has restored to normal",
+    "addressMeaning": "Zone or point"
+  },
+  "FW": {
+    "code": "FW",
+    "title": "Fire Supervisory Trouble",
+    "description": "A fire supervisory zone is now in a trouble condition",
+    "addressMeaning": "Zone or point"
+  },
+  "FX": {
+    "code": "FX",
+    "title": "Fire Test",
+    "description": "Fire zone activated during test",
+    "addressMeaning": "Zone or point"
+  },
+  "FY": {
+    "code": "FY",
+    "title": "Missing Fire Trouble",
+    "description": "A fire point is now logically missing",
+    "addressMeaning": "Zone or point"
+  },
+  "FZ": {
+    "code": "FZ",
+    "title": "Missing Fire Supervision",
+    "description": "A Fire Supervisory point has gone missing",
+    "addressMeaning": "Zone or point"
+  },
+  "GA": {
+    "code": "GA",
+    "title": "Gas Alarm",
+    "description": "Gas alarm condition detected",
+    "addressMeaning": "Zone or point"
+  },
+  "GB": {
+    "code": "GB",
+    "title": "Gas Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "GH": {
+    "code": "GH",
+    "title": "Gas Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "GJ": {
+    "code": "GJ",
+    "title": "Gas Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "GR": {
+    "code": "GR",
+    "title": "Gas Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "GS": {
+    "code": "GS",
+    "title": "Gas Supervisory",
+    "description": "Unsafe gas detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "GT": {
+    "code": "GT",
+    "title": "Gas Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "GU": {
+    "code": "GU",
+    "title": "Gas Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "GX": {
+    "code": "GX",
+    "title": "Gas Test",
+    "description": "Zone activated during test",
+    "addressMeaning": "Zone or point"
+  },
+  "HA": {
+    "code": "HA",
+    "title": "Holdup Alarm",
+    "description": "Silent alarm, user under duress",
+    "addressMeaning": "Zone or point"
+  },
+  "HB": {
+    "code": "HB",
+    "title": "Holdup Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "HH": {
+    "code": "HH",
+    "title": "Holdup Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "HJ": {
+    "code": "HJ",
+    "title": "Holdup Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "HR": {
+    "code": "HR",
+    "title": "Holdup Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "HS": {
+    "code": "HS",
+    "title": "Holdup Supervisory",
+    "description": "Unsafe holdup system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "HT": {
+    "code": "HT",
+    "title": "Holdup Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "HU": {
+    "code": "HU",
+    "title": "Holdup Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "IA": {
+    "code": "IA",
+    "title": "Equipment Failure Condition",
+    "description": "A specific, reportable condition is detected on a device",
+    "addressMeaning": "Point number"
+  },
+  "IR": {
+    "code": "IR",
+    "title": "Equipment Fail - Restoral",
+    "description": "The equipment condition has been restored to normal",
+    "addressMeaning": "Point number"
+  },
+  "JA": {
+    "code": "JA",
+    "title": "User Code Tamper",
+    "description": "Too many unsuccessful attempts have been made to enter a user ID",
+    "addressMeaning": "Area number"
+  },
+  "JD": {
+    "code": "JD",
+    "title": "Date Changed",
+    "description": "The date was changed in the transmitter/receiver",
+    "addressMeaning": "User number"
+  },
+  "JH": {
+    "code": "JH",
+    "title": "Holiday Changed",
+    "description": "The transmitter's holiday schedule has been changed",
+    "addressMeaning": "User number"
+  },
+  "JK": {
+    "code": "JK",
+    "title": "Latchkey Alert",
+    "description": "A designated user passcode has not been entered during a scheduled time window",
+    "addressMeaning": "User number"
+  },
+  "JL": {
+    "code": "JL",
+    "title": "Log Threshold",
+    "description": "The transmitter's log memory has reached its threshold level",
+    "addressMeaning": "Unused"
+  },
+  "JO": {
+    "code": "JO",
+    "title": "Log Overflow",
+    "description": "The transmitter's log memory has overflowed",
+    "addressMeaning": "Unused"
+  },
+  "JP": {
+    "code": "JP",
+    "title": "User On Premises",
+    "description": "A designated user passcode has been used to gain access to the premises.",
+    "addressMeaning": "User number"
+  },
+  "JR": {
+    "code": "JR",
+    "title": "Schedule Executed",
+    "description": "An automatic scheduled event was executed",
+    "addressMeaning": "Area number"
+  },
+  "JS": {
+    "code": "JS",
+    "title": "Schedule Changed",
+    "description": "An automatic schedule was changed",
+    "addressMeaning": "User number"
+  },
+  "JT": {
+    "code": "JT",
+    "title": "Time Changed",
+    "description": "The time was changed in the transmitter/receiver",
+    "addressMeaning": "User number"
+  },
+  "JV": {
+    "code": "JV",
+    "title": "User Code Changed",
+    "description": "A user's code has been changed",
+    "addressMeaning": "User number"
+  },
+  "JX": {
+    "code": "JX",
+    "title": "User Code Deleted",
+    "description": "A user's code has been removed",
+    "addressMeaning": "User number"
+  },
+  "JY": {
+    "code": "JY",
+    "title": "User Code Added",
+    "description": "A user’s code has been added",
+    "addressMeaning": "User number"
+  },
+  "JZ": {
+    "code": "JZ",
+    "title": "User Level Set",
+    "description": "A user’s authority level has been set",
+    "addressMeaning": "User number"
+  },
+  "KA": {
+    "code": "KA",
+    "title": "Heat Alarm",
+    "description": "High temperature detected on premise",
+    "addressMeaning": "Zone or point"
+  },
+  "KB": {
+    "code": "KB",
+    "title": "Heat Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "KH": {
+    "code": "KH",
+    "title": "Heat Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "KJ": {
+    "code": "KJ",
+    "title": "Heat Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "KR": {
+    "code": "KR",
+    "title": "Heat Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "KS": {
+    "code": "KS",
+    "title": "Heat Supervisory",
+    "description": "Unsafe heat detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "KT": {
+    "code": "KT",
+    "title": "Heat Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "KU": {
+    "code": "KU",
+    "title": "Heat Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "LB": {
+    "code": "LB",
+    "title": "Local Program",
+    "description": "Begin local programming",
+    "addressMeaning": "Unused"
+  },
+  "LD": {
+    "code": "LD",
+    "title": "Local Program Denied",
+    "description": "Access code incorrect",
+    "addressMeaning": "Unused"
+  },
+  "LE": {
+    "code": "LE",
+    "title": "Listen-in Ended",
+    "description": "The listen-in session has been terminated",
+    "addressMeaning": "Unused"
+  },
+  "LF": {
+    "code": "LF",
+    "title": "Listen-in Begin",
+    "description": "The listen-in session with the RECEIVER has begun",
+    "addressMeaning": "Unused"
+  },
+  "LR": {
+    "code": "LR",
+    "title": "Phone Line Restoral",
+    "description": "Phone line restored to service",
+    "addressMeaning": "Line number"
+  },
+  "LS": {
+    "code": "LS",
+    "title": "Local Program Success",
+    "description": "Local programming successful",
+    "addressMeaning": "Unused"
+  },
+  "LT": {
+    "code": "LT",
+    "title": "Phone Line Trouble",
+    "description": "Phone line trouble report",
+    "addressMeaning": "Line number"
+  },
+  "LU": {
+    "code": "LU",
+    "title": "Local Program Fail",
+    "description": "Local programming unsuccessful",
+    "addressMeaning": "Unused"
+  },
+  "LX": {
+    "code": "LX",
+    "title": "Local Programming Ended",
+    "description": "A local programming session has been terminated",
+    "addressMeaning": "Unused"
+  },
+  "MA": {
+    "code": "MA",
+    "title": "Medical Alarm",
+    "description": "Emergency assistance request",
+    "addressMeaning": "Zone or point"
+  },
+  "MB": {
+    "code": "MB",
+    "title": "Medical Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "MH": {
+    "code": "MH",
+    "title": "Medical Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "MI": {
+    "code": "MI",
+    "title": "Message",
+    "description": "A canned message is being sent",
+    "addressMeaning": "Message number"
+  },
+  "MJ": {
+    "code": "MJ",
+    "title": "Medical Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "MR": {
+    "code": "MR",
+    "title": "Medical Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "MS": {
+    "code": "MS",
+    "title": "Medical Supervisory",
+    "description": "Unsafe system condition exists",
+    "addressMeaning": "Zone or point"
+  },
+  "MT": {
+    "code": "MT",
+    "title": "Medical Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "MU": {
+    "code": "MU",
+    "title": "Medical Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "NA": {
+    "code": "NA",
+    "title": "No Activity",
+    "description": "There has been no zone activity for a programmed amount of time",
+    "addressMeaning": "Zone number"
+  },
+  "NC": {
+    "code": "NC",
+    "title": "Network Condition",
+    "description": "A communications network has a specific reportable condition",
+    "addressMeaning": "Network number"
+  },
+  "NF": {
+    "code": "NF",
+    "title": "Forced Perimeter Arm",
+    "description": "Some zones/points not ready",
+    "addressMeaning": "Area number"
+  },
+  "NL": {
+    "code": "NL",
+    "title": "Perimeter Armed",
+    "description": "An area has been perimeter armed",
+    "addressMeaning": "Area number"
+  },
+  "NM": {
+    "code": "NM",
+    "title": "Perimeter Armed, User Defined",
+    "description": "A user defined area has been perimeter armed",
+    "addressMeaning": "Area number"
+  },
+  "NR": {
+    "code": "NR",
+    "title": "Network Restoral",
+    "description": "A communications network has returned to normal operation",
+    "addressMeaning": "Network number"
+  },
+  "NS": {
+    "code": "NS",
+    "title": "Activity Resumed",
+    "description": "A zone has detected activity after an alert",
+    "addressMeaning": "Zone number"
+  },
+  "NT": {
+    "code": "NT",
+    "title": "Network Failure",
+    "description": "A communications network has failed",
+    "addressMeaning": "Network number"
+  },
+  "OA": {
+    "code": "OA",
+    "title": "Automatic Opening",
+    "description": "System has disarmed automatically",
+    "addressMeaning": "Area number"
+  },
+  "OC": {
+    "code": "OC",
+    "title": "Cancel Report",
+    "description": "Untyped zone cancel",
+    "addressMeaning": "User number"
+  },
+  "OG": {
+    "code": "OG",
+    "title": "Open Area",
+    "description": "System has been partially disarmed",
+    "addressMeaning": "Area number"
+  },
+  "OH": {
+    "code": "OH",
+    "title": "Early to Open from Alarm",
+    "description": "An area in alarm was disarmed before the opening window",
+    "addressMeaning": "User number"
+  },
+  "OI": {
+    "code": "OI",
+    "title": "Fail to Open",
+    "description": "An area has not been armed at the end of the opening window",
+    "addressMeaning": "Area number"
+  },
+  "OJ": {
+    "code": "OJ",
+    "title": "Late Open",
+    "description": "An area was disarmed after the opening window",
+    "addressMeaning": "User number"
+  },
+  "OK": {
+    "code": "OK",
+    "title": "Early Open",
+    "description": "An area was disarmed before the opening window",
+    "addressMeaning": "User number"
+  },
+  "OL": {
+    "code": "OL",
+    "title": "Late to Open from Alarm",
+    "description": "An area in alarm was disarmed after the opening window",
+    "addressMeaning": "User number"
+  },
+  "OP": {
+    "code": "OP",
+    "title": "Opening Report",
+    "description": "Account was disarmed",
+    "addressMeaning": "User number"
+  },
+  "OQ": {
+    "code": "OQ",
+    "title": "Remote Opening",
+    "description": "The system was disarmed from a remote location",
+    "addressMeaning": "User number"
+  },
+  "OR": {
+    "code": "OR",
+    "title": "Disarm From Alarm",
+    "description": "Account in alarm was reset/disarmed",
+    "addressMeaning": "User number"
+  },
+  "OS": {
+    "code": "OS",
+    "title": "Opening Keyswitch",
+    "description": "Account has been disarmed by keyswitch",
+    "addressMeaning": "Zone or point"
+  },
+  "OT": {
+    "code": "OT",
+    "title": "Late To Close",
+    "description": "System was not armed on time",
+    "addressMeaning": "User number"
+  },
+  "OU": {
+    "code": "OU",
+    "title": "Output State – Trouble",
+    "description": "An output on a peripheral device or NAC is not functioning",
+    "addressMeaning": "Output number"
+  },
+  "OV": {
+    "code": "OV",
+    "title": "Output State – Restore",
+    "description": "An output on a peripheral device or NAC is back to normal operation",
+    "addressMeaning": "Output number"
+  },
+  "OZ": {
+    "code": "OZ",
+    "title": "Point Opening",
+    "description": "A point, rather than a full area or account, disarmed",
+    "addressMeaning": "Zone or point"
+  },
+  "PA": {
+    "code": "PA",
+    "title": "Panic Alarm",
+    "description": "Emergency assistance request, manually activated",
+    "addressMeaning": "Zone or point"
+  },
+  "PB": {
+    "code": "PB",
+    "title": "Panic Bypass",
+    "description": "Panic zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "PH": {
+    "code": "PH",
+    "title": "Panic Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "PJ": {
+    "code": "PJ",
+    "title": "Panic Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "PR": {
+    "code": "PR",
+    "title": "Panic Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "PS": {
+    "code": "PS",
+    "title": "Panic Supervisory",
+    "description": "Unsafe system condition exists",
+    "addressMeaning": "Zone or point"
+  },
+  "PT": {
+    "code": "PT",
+    "title": "Panic Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "PU": {
+    "code": "PU",
+    "title": "Panic Unbypass",
+    "description": "Panic zone bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "QA": {
+    "code": "QA",
+    "title": "Emergency Alarm",
+    "description": "Emergency assistance request",
+    "addressMeaning": "Zone or point"
+  },
+  "QB": {
+    "code": "QB",
+    "title": "Emergency Bypass",
+    "description": "Zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "QH": {
+    "code": "QH",
+    "title": "Emergency Alarm Restore",
+    "description": "Alarm condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "QJ": {
+    "code": "QJ",
+    "title": "Emergency Trouble Restore",
+    "description": "Trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "QR": {
+    "code": "QR",
+    "title": "Emergency Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "QS": {
+    "code": "QS",
+    "title": "Emergency Supervisory",
+    "description": "Unsafe system condition exists",
+    "addressMeaning": "Zone or point"
+  },
+  "QT": {
+    "code": "QT",
+    "title": "Emergency Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "QU": {
+    "code": "QU",
+    "title": "Emergency Unbypass",
+    "description": "Bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "RA": {
+    "code": "RA",
+    "title": "Remote Programmer Call Failed",
+    "description": "Transmitter failed to communicate with the remote programmer",
+    "addressMeaning": "Unused"
+  },
+  "RB": {
+    "code": "RB",
+    "title": "Remote Program Begin",
+    "description": "Remote programming session initiated",
+    "addressMeaning": "Unused"
+  },
+  "RC": {
+    "code": "RC",
+    "title": "Relay Close",
+    "description": "A relay has energized",
+    "addressMeaning": "Relay number"
+  },
+  "RD": {
+    "code": "RD",
+    "title": "Remote Program Denied",
+    "description": "Access passcode incorrect",
+    "addressMeaning": "Unused"
+  },
+  "RN": {
+    "code": "RN",
+    "title": "Remote Reset",
+    "description": "A TRANSMITTER was reset via a remote programmer",
+    "addressMeaning": "Unused"
+  },
+  "RO": {
+    "code": "RO",
+    "title": "Relay Open",
+    "description": "A relay has de-energized",
+    "addressMeaning": "Relay number"
+  },
+  "RP": {
+    "code": "RP",
+    "title": "Automatic Test",
+    "description": "Automatic communication test report",
+    "addressMeaning": "Unused"
+  },
+  "RR": {
+    "code": "RR",
+    "title": "Power Up",
+    "description": "System lost power, is now restored",
+    "addressMeaning": "Unused"
+  },
+  "RS": {
+    "code": "RS",
+    "title": "Remote Program Success",
+    "description": "Remote programming successful",
+    "addressMeaning": "Unused"
+  },
+  "RT": {
+    "code": "RT",
+    "title": "Data Lost",
+    "description": "Dialer data lost, transmission error",
+    "addressMeaning": "Line number"
+  },
+  "RU": {
+    "code": "RU",
+    "title": "Remote Program Fail",
+    "description": "Remote programming unsuccessful",
+    "addressMeaning": "Unused"
+  },
+  "RX": {
+    "code": "RX",
+    "title": "Manual Test",
+    "description": "Manual communication test report",
+    "addressMeaning": "User number"
+  },
+  "RY": {
+    "code": "RY",
+    "title": "Test Off Normal",
+    "description": "Test signal(s) indicates abnormal condition(s) exist",
+    "addressMeaning": "Zone or point"
+  },
+  "SA": {
+    "code": "SA",
+    "title": "Sprinkler Alarm",
+    "description": "Sprinkler flow condition exists",
+    "addressMeaning": "Zone or point"
+  },
+  "SB": {
+    "code": "SB",
+    "title": "Sprinkler Bypass",
+    "description": "Sprinkler zone has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "SC": {
+    "code": "SC",
+    "title": "Change of State",
+    "description": "An expansion/peripheral device is reporting a new condition or state change",
+    "addressMeaning": "Condition number"
+  },
+  "SH": {
+    "code": "SH",
+    "title": "Sprinkler Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "SJ": {
+    "code": "SJ",
+    "title": "Sprinkler Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "SR": {
+    "code": "SR",
+    "title": "Sprinkler Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "SS": {
+    "code": "SS",
+    "title": "Sprinkler Supervisory",
+    "description": "Unsafe sprinkler system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "ST": {
+    "code": "ST",
+    "title": "Sprinkler Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "SU": {
+    "code": "SU",
+    "title": "Sprinkler Unbypass",
+    "description": "Sprinkler zone bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "TA": {
+    "code": "TA",
+    "title": "Tamper Alarm",
+    "description": "Alarm equipment enclosure opened",
+    "addressMeaning": "Zone or point"
+  },
+  "TB": {
+    "code": "TB",
+    "title": "Tamper Bypass",
+    "description": "Tamper detection has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "TC": {
+    "code": "TC",
+    "title": "All Points Tested",
+    "description": "All point tested",
+    "addressMeaning": "Unused"
+  },
+  "TE": {
+    "code": "TE",
+    "title": "Test End",
+    "description": "Communicator restored to operation",
+    "addressMeaning": "Unused"
+  },
+  "TH": {
+    "code": "TH",
+    "title": "Tamper Alarm Restore",
+    "description": "An Expansion Device’s tamper switch restores to normal from an Alarm state",
+    "addressMeaning": "Unused"
+  },
+  "TJ": {
+    "code": "TJ",
+    "title": "Tamper Trouble Restore",
+    "description": "An Expansion Device’s tamper switch restores to normal from a Trouble state",
+    "addressMeaning": "Unused"
+  },
+  "TP": {
+    "code": "TP",
+    "title": "Walk Test Point",
+    "description": "This point was tested during a Walk Test",
+    "addressMeaning": "Point number"
+  },
+  "TR": {
+    "code": "TR",
+    "title": "Tamper Restoral",
+    "description": "Alarm equipment enclosure has been closed",
+    "addressMeaning": "Zone or point"
+  },
+  "TS": {
+    "code": "TS",
+    "title": "Test Start",
+    "description": "Communicator taken out of operation",
+    "addressMeaning": "Unused"
+  },
+  "TT": {
+    "code": "TT",
+    "title": "Tamper Trouble",
+    "description": "Equipment enclosure opened in disarmed state",
+    "addressMeaning": "Zone or point"
+  },
+  "TU": {
+    "code": "TU",
+    "title": "Tamper Unbypass",
+    "description": "Tamper detection bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "TW": {
+    "code": "TW",
+    "title": "Area Watch Start",
+    "description": "Area watch feature has been activated",
+    "addressMeaning": "Unused"
+  },
+  "TX": {
+    "code": "TX",
+    "title": "Test Report",
+    "description": "An unspecified (manual or automatic) communicator test",
+    "addressMeaning": "Unused"
+  },
+  "TZ": {
+    "code": "TZ",
+    "title": "Area Watch End",
+    "description": "Area watch feature has been deactivated",
+    "addressMeaning": "Unused"
+  },
+  "UA": {
+    "code": "UA",
+    "title": "Untyped Zone Alarm",
+    "description": "Alarm condition from zone of unknown type",
+    "addressMeaning": "Zone or point"
+  },
+  "UB": {
+    "code": "UB",
+    "title": "Untyped Zone Bypass",
+    "description": "Zone of unknown type has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "UG": {
+    "code": "UG",
+    "title": "Unverified Event – Untyped",
+    "description": "A point assigned to a Cross Point group has gone into alarm but the Cross Point remained normal",
+    "addressMeaning": "Zone or point"
+  },
+  "UH": {
+    "code": "UH",
+    "title": "Untyped Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "UJ": {
+    "code": "UJ",
+    "title": "Untyped Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "UR": {
+    "code": "UR",
+    "title": "Untyped Zone Restoral",
+    "description": "Alarm/trouble condition eliminated from zone of unknown type",
+    "addressMeaning": "Zone or point"
+  },
+  "US": {
+    "code": "US",
+    "title": "Untyped Zone Supervisory",
+    "description": "Unsafe condition from zone of unknown type",
+    "addressMeaning": "Zone or point"
+  },
+  "UT": {
+    "code": "UT",
+    "title": "Untyped Zone Trouble",
+    "description": "Trouble condition from zone of unknown type",
+    "addressMeaning": "Zone or point"
+  },
+  "UU": {
+    "code": "UU",
+    "title": "Untyped Zone Unbypass",
+    "description": "Bypass on zone of unknown type has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "UX": {
+    "code": "UX",
+    "title": "Undefined",
+    "description": "An undefined alarm condition has occurred",
+    "addressMeaning": "Unused"
+  },
+  "UY": {
+    "code": "UY",
+    "title": "Untyped Missing Trouble",
+    "description": "A point or device which was not armed is now logically missing",
+    "addressMeaning": "Zone or point"
+  },
+  "UZ": {
+    "code": "UZ",
+    "title": "Untyped Missing Alarm",
+    "description": "A point or device which was armed is now logically missing",
+    "addressMeaning": "Zone or point"
+  },
+  "VI": {
+    "code": "VI",
+    "title": "Printer Paper In",
+    "description": "TRANSMITTER or RECEIVER paper in",
+    "addressMeaning": "Printer number"
+  },
+  "VO": {
+    "code": "VO",
+    "title": "Printer Paper Out",
+    "description": "TRANSMITTER or RECEIVER paper out",
+    "addressMeaning": "Printer number"
+  },
+  "VR": {
+    "code": "VR",
+    "title": "Printer Restore",
+    "description": "TRANSMITTER or RECEIVER trouble restored",
+    "addressMeaning": "Printer number"
+  },
+  "VT": {
+    "code": "VT",
+    "title": "Printer Trouble",
+    "description": "TRANSMITTER or RECEIVER trouble",
+    "addressMeaning": "Printer number"
+  },
+  "VX": {
+    "code": "VX",
+    "title": "Printer Test",
+    "description": "TRANSMITTER or RECEIVER test",
+    "addressMeaning": "Printer number"
+  },
+  "VY": {
+    "code": "VY",
+    "title": "Printer Online",
+    "description": "RECEIVER’S printer is now online",
+    "addressMeaning": "Unused"
+  },
+  "VZ": {
+    "code": "VZ",
+    "title": "Printer Offline",
+    "description": "RECEIVER’S printer is now offline",
+    "addressMeaning": "Unused"
+  },
+  "WA": {
+    "code": "WA",
+    "title": "Water Alarm",
+    "description": "Water detected at protected premises",
+    "addressMeaning": "Zone or point"
+  },
+  "WB": {
+    "code": "WB",
+    "title": "Water Bypass",
+    "description": "Water detection has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "WH": {
+    "code": "WH",
+    "title": "Water Alarm Restore",
+    "description": "Water alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "WJ": {
+    "code": "WJ",
+    "title": "Water Trouble Restore",
+    "description": "Water trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "WR": {
+    "code": "WR",
+    "title": "Water Restoral",
+    "description": "Water alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "WS": {
+    "code": "WS",
+    "title": "Water Supervisory",
+    "description": "Water unsafe water detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "WT": {
+    "code": "WT",
+    "title": "Water Trouble",
+    "description": "Water zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "WU": {
+    "code": "WU",
+    "title": "Water Unbypass",
+    "description": "Water detection bypass has been removed",
+    "addressMeaning": "Zone or point"
+  },
+  "XA": {
+    "code": "XA",
+    "title": "Extra Account Report",
+    "description": "CS RECEIVER has received an event from a non-existent account",
+    "addressMeaning": "Unused"
+  },
+  "XE": {
+    "code": "XE",
+    "title": "Extra Point",
+    "description": "Panel has sensed an extra point not specified for this site",
+    "addressMeaning": "Point number"
+  },
+  "XF": {
+    "code": "XF",
+    "title": "Extra RF Point",
+    "description": "Panel has sensed an extra RF point not specified for this site",
+    "addressMeaning": "Point number"
+  },
+  "XH": {
+    "code": "XH",
+    "title": "RF Interference Restoral",
+    "description": "A radio device is no longer detecting RF Interference",
+    "addressMeaning": "Receiver number"
+  },
+  "XI": {
+    "code": "XI",
+    "title": "Sensor Reset",
+    "description": "A user has reset a sensor",
+    "addressMeaning": "Zone or point"
+  },
+  "XJ": {
+    "code": "XJ",
+    "title": "RF Receiver Tamper Restoral",
+    "description": "A Tamper condition at a premises RF Receiver has been restored",
+    "addressMeaning": "Receiver number"
+  },
+  "XL": {
+    "code": "XL",
+    "title": "Low Received Signal Strength",
+    "description": "The RF signal strength of a reported event is below minimum level",
+    "addressMeaning": "Receiver number"
+  },
+  "XM": {
+    "code": "XM",
+    "title": "Missing Alarm - Cross Point",
+    "description": "Missing Alarm verified by Cross Point in Alarm (or missing)",
+    "addressMeaning": "Zone or point"
+  },
+  "XQ": {
+    "code": "XQ",
+    "title": "RF Interference",
+    "description": "A radio device is detecting RF Interference",
+    "addressMeaning": "Receiver number"
+  },
+  "XR": {
+    "code": "XR",
+    "title": "Transmitter Battery Restoral",
+    "description": "Low battery has been corrected",
+    "addressMeaning": "Zone or point"
+  },
+  "XS": {
+    "code": "XS",
+    "title": "RF Receiver Tamper",
+    "description": "A Tamper condition at a premises receiver is detected",
+    "addressMeaning": "Receiver number"
+  },
+  "XT": {
+    "code": "XT",
+    "title": "Transmitter Battery Trouble",
+    "description": "Low battery in wireless transmitter",
+    "addressMeaning": "Zone or point"
+  },
+  "XW": {
+    "code": "XW",
+    "title": "Forced Point",
+    "description": "A point was forced out of the system at arm time",
+    "addressMeaning": "Zone or point"
+  },
+  "XX": {
+    "code": "XX",
+    "title": "Fail to Test",
+    "description": "A specific test from a panel was not received",
+    "addressMeaning": "Unused"
+  },
+  "YA": {
+    "code": "YA",
+    "title": "Bell Fault",
+    "description": "A trouble condition has been detected on a Local Bell, Siren, or Annunciator",
+    "addressMeaning": "Unused"
+  },
+  "YB": {
+    "code": "YB",
+    "title": "Busy Seconds",
+    "description": "Percent of time receiver's line card is on-line",
+    "addressMeaning": "Line card number"
+  },
+  "YC": {
+    "code": "YC",
+    "title": "Communications Fail",
+    "description": "RECEIVER and TRANSMITTER",
+    "addressMeaning": "Unused"
+  },
+  "YD": {
+    "code": "YD",
+    "title": "Receiver Line Card Trouble",
+    "description": "A line card identified by the passed address is in trouble",
+    "addressMeaning": "Line card number"
+  },
+  "YE": {
+    "code": "YE",
+    "title": "Receiver Line Card Restored",
+    "description": "A line card identified by the passed address is restored",
+    "addressMeaning": "Line card number"
+  },
+  "YF": {
+    "code": "YF",
+    "title": "Parameter Checksum Fail",
+    "description": "System data corrupted",
+    "addressMeaning": "Unused"
+  },
+  "YG": {
+    "code": "YG",
+    "title": "Parameter Changed",
+    "description": "A TRANSMITTER’S parameters have been changed",
+    "addressMeaning": "Unused"
+  },
+  "YH": {
+    "code": "YH",
+    "title": "Bell Restored",
+    "description": "A trouble condition has been restored on a Local Bell, Siren, or Annunciator",
+    "addressMeaning": "Unused"
+  },
+  "YI": {
+    "code": "YI",
+    "title": "Overcurrent Trouble",
+    "description": "An Expansion Device has detected an overcurrent condition",
+    "addressMeaning": "Unused"
+  },
+  "YJ": {
+    "code": "YJ",
+    "title": "Overcurrent Restore",
+    "description": "An Expansion Device has restored from an overcurrent condition",
+    "addressMeaning": "Unused"
+  },
+  "YK": {
+    "code": "YK",
+    "title": "Communications Restoral",
+    "description": "TRANSMITTER has resumed communication with a RECEIVER",
+    "addressMeaning": "Unused"
+  },
+  "YM": {
+    "code": "YM",
+    "title": "System Battery Missing",
+    "description": "TRANSMITTER/RECEIVER battery is missing",
+    "addressMeaning": "Unused"
+  },
+  "YN": {
+    "code": "YN",
+    "title": "Invalid Report",
+    "description": "TRANSMITTER has sent a packet with invalid data",
+    "addressMeaning": "Unused"
+  },
+  "YO": {
+    "code": "YO",
+    "title": "Unknown Message",
+    "description": "An unknown message was received from automation or the printer",
+    "addressMeaning": "Unused"
+  },
+  "YP": {
+    "code": "YP",
+    "title": "Power Supply Trouble",
+    "description": "TRANSMITTER/RECEIVER has a problem with the power supply",
+    "addressMeaning": "Unused"
+  },
+  "YQ": {
+    "code": "YQ",
+    "title": "Power Supply Restored",
+    "description": "TRANSMITTER’S/RECEIVER’S power supply has been restored",
+    "addressMeaning": "Unused"
+  },
+  "YR": {
+    "code": "YR",
+    "title": "System Battery Restoral",
+    "description": "Low battery has been corrected",
+    "addressMeaning": "Unused"
+  },
+  "YS": {
+    "code": "YS",
+    "title": "Communications Trouble",
+    "description": "RECEIVER and TRANSMITTER",
+    "addressMeaning": "Unused"
+  },
+  "YT": {
+    "code": "YT",
+    "title": "System Battery Trouble",
+    "description": "Low battery in control/communicator",
+    "addressMeaning": "Unused"
+  },
+  "YU": {
+    "code": "YU",
+    "title": "Diagnostic Error",
+    "description": "An expansion/peripheral device is reporting a diagnostic error",
+    "addressMeaning": "Condition number"
+  },
+  "YW": {
+    "code": "YW",
+    "title": "Watchdog Reset",
+    "description": "The TRANSMITTER created an internal reset",
+    "addressMeaning": "Unused"
+  },
+  "YX": {
+    "code": "YX",
+    "title": "Service Required",
+    "description": "A TRANSMITTER/RECEIVER needs service",
+    "addressMeaning": "Unused"
+  },
+  "YY": {
+    "code": "YY",
+    "title": "Status Report",
+    "description": "This is a header for an account status report transmission",
+    "addressMeaning": "Unused"
+  },
+  "YZ": {
+    "code": "YZ",
+    "title": "Service Completed",
+    "description": "Required TRANSMITTER / RECEIVER service completed",
+    "addressMeaning": "Mfr defined"
+  },
+  "ZA": {
+    "code": "ZA",
+    "title": "Freeze Alarm",
+    "description": "Low temperature detected at premises",
+    "addressMeaning": "Zone or point"
+  },
+  "ZB": {
+    "code": "ZB",
+    "title": "Freeze Bypass",
+    "description": "Low temperature detection has been bypassed",
+    "addressMeaning": "Zone or point"
+  },
+  "ZH": {
+    "code": "ZH",
+    "title": "Freeze Alarm Restore",
+    "description": "Alarm condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "ZJ": {
+    "code": "ZJ",
+    "title": "Freeze Trouble Restore",
+    "description": "Trouble condition eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "ZR": {
+    "code": "ZR",
+    "title": "Freeze Restoral",
+    "description": "Alarm/trouble condition has been eliminated",
+    "addressMeaning": "Zone or point"
+  },
+  "ZS": {
+    "code": "ZS",
+    "title": "Freeze Supervisory",
+    "description": "Unsafe freeze detection system condition",
+    "addressMeaning": "Zone or point"
+  },
+  "ZT": {
+    "code": "ZT",
+    "title": "Freeze Trouble",
+    "description": "Zone disabled by fault",
+    "addressMeaning": "Zone or point"
+  },
+  "ZU": {
+    "code": "ZU",
+    "title": "Freeze Unbypass",
+    "description": "Low temperature detection bypass removed",
+    "addressMeaning": "Zone or point"
+  }
+}
