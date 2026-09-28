@@ -247,3 +247,7 @@ The protocol implementation in `custom_components/sia_dc09/dc09/` is a pure
 Python port of [SIADC09Debugger](https://github.com/mikkel-esp/SIADC09Debugger),
 including its test vectors, and has no Home Assistant dependency. `listener.py`
 is likewise Home Assistant free and is tested over real loopback sockets.
+
+## License
+
+Released under the [MIT License](LICENSE).

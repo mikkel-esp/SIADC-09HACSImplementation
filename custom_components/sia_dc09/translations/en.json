@@ -135,6 +135,22 @@
     }
   },
   "selector": {
+    "status": {
+      "options": {
+        "disarmed": "Disarmed",
+        "armed_away": "Armed away",
+        "armed_home": "Armed home",
+        "armed_night": "Armed night",
+        "armed_vacation": "Armed vacation",
+        "armed_custom_bypass": "Armed custom bypass",
+        "arming": "Arming",
+        "disarming": "Disarming",
+        "pending": "Pending",
+        "triggered": "Triggered",
+        "panic": "Panic",
+        "unknown": "Unknown"
+      }
+    },
     "unknown_account_policy": {
       "options": {
         "discover": "List them on the unknown accounts sensor",

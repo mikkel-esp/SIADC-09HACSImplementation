@@ -140,3 +140,27 @@ def test_set_status_offers_every_status() -> None:
         "options"
     ]
     assert set(options) == {status.value for status in SiaStatus}
+
+
+def test_service_selector_translation_keys_resolve() -> None:
+    """Every translated selector in services.yaml has matching labels.
+
+    This is the rule hassfest enforces; checking it here means a missing
+    block fails locally rather than in CI.
+    """
+    services = yaml.safe_load((COMPONENT / "services.yaml").read_text(encoding="utf-8"))
+    strings = load("strings.json")
+
+    seen = 0
+    for name, definition in services.items():
+        for field, spec in ((definition or {}).get("fields") or {}).items():
+            select = (spec.get("selector") or {}).get("select") or {}
+            key = select.get("translation_key")
+            if key is None:
+                continue
+            seen += 1
+            assert key in strings["selector"], f"{name}.{field} -> {key}"
+            labels = strings["selector"][key]["options"]
+            assert set(select["options"]) == set(labels), f"{name}.{field}"
+
+    assert seen, "expected at least one translated selector"
