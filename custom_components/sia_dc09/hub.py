@@ -15,6 +15,7 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -87,7 +88,7 @@ class AccountConfig:
         raw_key = data.get(CONF_ENCRYPTION_KEY)
         return cls(
             account=account,
-            name=data.get("name") or account,
+            name=data.get(CONF_NAME) or account,
             key=parse_key(raw_key) if raw_key else None,
             heartbeat_timeout=data.get(
                 CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT

@@ -16,6 +16,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    CONF_ACCOUNT,
+    CONF_ACCOUNTS,
     CONF_ARM_AWAY_TARGET,
     CONF_ARM_HOME_TARGET,
     CONF_ARM_NIGHT_TARGET,
@@ -27,6 +29,7 @@ from .entity import SiaDc09Entity
 from .hub import AccountConfig, SiaDc09Hub
 from .models import SiaDc09Event
 from .state_machine import SiaStatus, panel_state
+from .utils import normalise_account
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,8 +62,8 @@ async def async_setup_entry(
 def _accounts_with_config(hub: SiaDc09Hub):
     """Pair each parsed account with its raw configuration dictionary."""
     raw_by_account = {
-        (raw.get("account") or "").strip().upper(): raw
-        for raw in hub.options.get("accounts", [])
+        normalise_account(raw.get(CONF_ACCOUNT, "")): raw
+        for raw in hub.options.get(CONF_ACCOUNTS, [])
     }
     for account in hub.accounts.values():
         yield account, raw_by_account.get(account.account, {})

@@ -6,13 +6,16 @@ import asyncio
 from typing import Any
 
 import pytest
+from homeassistant.components.alarm_control_panel import AlarmControlPanelEntityFeature
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.sia_dc09.const import (
     CONF_ACCOUNT,
     CONF_ACCOUNTS,
+    CONF_ARM_AWAY_TARGET,
     CONF_BIND_HOST,
     CONF_ENCRYPTION_KEY,
     CONF_NAK_ON_BAD_CRC,
@@ -330,3 +333,50 @@ async def test_options_update_reloads(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
 
     assert hass.states.get("sensor.garage_status") is not None
+
+
+async def test_no_arming_targets_means_no_features(hass: HomeAssistant) -> None:
+    """Without a target the panel advertises nothing it cannot do."""
+    await make_entry(hass)
+
+    panel = hass.states.get("alarm_control_panel.front_door")
+    assert panel.attributes["supported_features"] == 0
+
+
+async def test_arming_runs_the_configured_target(hass: HomeAssistant) -> None:
+    """Arming delegates to the nominated entity instead of failing."""
+    assert await async_setup_component(
+        hass,
+        "input_button",
+        {"input_button": {"panel_arm": {"name": "Panel arm"}}},
+    )
+    await hass.async_block_till_done()
+
+    await make_entry(
+        hass,
+        accounts=[
+            {
+                CONF_ACCOUNT: ACCOUNT,
+                "name": "Front door",
+                CONF_ARM_AWAY_TARGET: "input_button.panel_arm",
+            }
+        ],
+    )
+
+    panel = hass.states.get("alarm_control_panel.front_door")
+    assert panel.attributes["supported_features"] == (
+        AlarmControlPanelEntityFeature.ARM_AWAY
+    )
+
+    before = hass.states.get("input_button.panel_arm").state
+    await hass.services.async_call(
+        "alarm_control_panel",
+        "alarm_arm_away",
+        {"entity_id": "alarm_control_panel.front_door"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert hass.states.get("input_button.panel_arm").state != before
+    # The status still only follows what the panel reports.
+    assert hass.states.get("sensor.front_door_status").state == STATE_UNKNOWN
