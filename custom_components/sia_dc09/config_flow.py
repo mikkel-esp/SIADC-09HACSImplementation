@@ -102,34 +102,55 @@ def receiver_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     )
 
 
-def account_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+def account_schema(
+    defaults: dict[str, Any] | None = None, *, editing: bool = False
+) -> vol.Schema:
     """Return the schema for adding or editing one account.
 
     The entity targets carry no default because an empty string is not a valid
     entity ID; ``add_suggested_values_to_schema`` prefills them instead.
+
+    The timestamp option is offered only when editing. On the creation form the
+    key has not been entered yet, so the checkbox would have to render its
+    insecure default and would then be submitted as an explicit choice, leaving
+    a new encrypted account open to replay. Leaving the field out lets
+    ``clean_account`` derive it from the key that was actually supplied.
     """
     defaults = defaults or {}
-    return vol.Schema(
-        {
-            vol.Required(CONF_ACCOUNT, default=defaults.get(CONF_ACCOUNT, "")): str,
-            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
-            vol.Optional(
-                CONF_ENCRYPTION_KEY, default=defaults.get(CONF_ENCRYPTION_KEY, "")
-            ): str,
-            vol.Required(
-                CONF_HEARTBEAT_TIMEOUT,
-                default=defaults.get(CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT),
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
+    schema: dict[Any, Any] = {
+        vol.Required(CONF_ACCOUNT, default=defaults.get(CONF_ACCOUNT, "")): str,
+        vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
+        vol.Optional(
+            CONF_ENCRYPTION_KEY, default=defaults.get(CONF_ENCRYPTION_KEY, "")
+        ): str,
+        vol.Required(
+            CONF_HEARTBEAT_TIMEOUT,
+            default=defaults.get(CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT),
+        ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
+    }
+    if editing:
+        schema[
             vol.Required(
                 CONF_IGNORE_TIMESTAMPS,
-                default=defaults.get(CONF_IGNORE_TIMESTAMPS, DEFAULT_IGNORE_TIMESTAMPS),
-            ): bool,
+                default=defaults.get(
+                    CONF_IGNORE_TIMESTAMPS,
+                    # An encrypted account enforces timestamps by default,
+                    # because that is what makes replay protection possible.
+                    False
+                    if defaults.get(CONF_ENCRYPTION_KEY)
+                    else DEFAULT_IGNORE_TIMESTAMPS,
+                ),
+            )
+        ] = bool
+    schema.update(
+        {
             vol.Optional(CONF_ARM_AWAY_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_ARM_HOME_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_ARM_NIGHT_TARGET): ARM_TARGET_SELECTOR,
             vol.Optional(CONF_DISARM_TARGET): ARM_TARGET_SELECTOR,
         }
     )
+    return vol.Schema(schema)
 
 
 TARGET_KEYS = (
@@ -190,20 +211,42 @@ def validate_account(
     return errors
 
 
-def clean_account(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalise an account submission into what gets stored."""
+def _ignore_timestamps(
+    data: dict[str, Any], key: str, previous: dict[str, Any] | None
+) -> bool:
+    """Decide whether an account should ignore message timestamps.
+
+    Mirrors ``AccountConfig.from_dict``: an encrypted account enforces
+    timestamps unless the user deliberately turns that off.
+
+    Adding a key to an existing account is treated as a fresh decision. Any
+    stored value predates the key, and a form submitted before the key existed
+    cannot have been a considered choice about replay protection.
+    """
+    if key and not (previous or {}).get(CONF_ENCRYPTION_KEY):
+        return False
+    return data.get(CONF_IGNORE_TIMESTAMPS, False if key else DEFAULT_IGNORE_TIMESTAMPS)
+
+
+def clean_account(
+    data: dict[str, Any], previous: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Normalise an account submission into what gets stored.
+
+    ``previous`` is the account as it was before an edit, which is what tells
+    us whether a key has just been added.
+    """
     account = normalise_account(data[CONF_ACCOUNT])
+    key = (data.get(CONF_ENCRYPTION_KEY) or "").strip()
     cleaned: dict[str, Any] = {
         CONF_ACCOUNT: account,
         CONF_NAME: (data.get(CONF_NAME) or "").strip() or account,
         CONF_HEARTBEAT_TIMEOUT: data.get(
             CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT
         ),
-        CONF_IGNORE_TIMESTAMPS: data.get(
-            CONF_IGNORE_TIMESTAMPS, DEFAULT_IGNORE_TIMESTAMPS
-        ),
+        CONF_IGNORE_TIMESTAMPS: _ignore_timestamps(data, key, previous),
     }
-    if key := (data.get(CONF_ENCRYPTION_KEY) or "").strip():
+    if key:
         cleaned[CONF_ENCRYPTION_KEY] = key
     for target in TARGET_KEYS:
         if value := (data.get(target) or "").strip():
@@ -410,7 +453,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
             errors = validate_account(user_input, accounts, editing=self._editing)
             if not errors:
                 updated = [
-                    clean_account(user_input)
+                    clean_account(user_input, previous=existing)
                     if normalise_account(item[CONF_ACCOUNT]) == self._editing
                     else item
                     for item in accounts
@@ -420,7 +463,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
             return self.async_show_form(
                 step_id="edit_account",
                 data_schema=self.add_suggested_values_to_schema(
-                    account_schema(user_input),
+                    account_schema(user_input, editing=True),
                     {key: user_input.get(key) for key in TARGET_KEYS},
                 ),
                 errors=errors,
@@ -429,7 +472,7 @@ class SiaDc09OptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="edit_account",
             data_schema=self.add_suggested_values_to_schema(
-                account_schema(existing),
+                account_schema(existing, editing=True),
                 {key: existing.get(key) for key in TARGET_KEYS},
             ),
         )

@@ -232,6 +232,71 @@ characters, and must match the panel exactly. `sia_dc09.decode_message` will
 decode a captured message against a key you supply, so you can test one without
 reconfiguring anything.
 
+**An account with a key stopped working.** Once an account has an encryption
+key, unencrypted messages for it are rejected and NAKed on purpose - see
+[Security](#security). Either configure the key on the panel too, or clear it
+here.
+
+## Security
+
+This integration listens on the network and drives alarm states, so it is worth
+being explicit about what it can and cannot protect against.
+
+### What the integration enforces
+
+- **A key means encryption is required.** If an account has an encryption key,
+  a cleartext message claiming to be from that account is rejected and never
+  changes state. Without this, anyone who could reach the port could forge a
+  disarm, because the account number travels in the cleartext header.
+- **Replay and retransmission are not applied twice.** A byte-identical message
+  for an account is acknowledged, so a panel retransmitting after a lost ACK
+  behaves correctly, but it only moves the alarm state once. For an account
+  that enforces timestamps, this memory lasts as long as a captured message
+  would still be accepted, closing the gap between the two checks. For an
+  account that ignores timestamps the window is deliberately short, because two
+  identical events are then genuinely indistinguishable: there it deduplicates,
+  it does not authenticate.
+- **Encrypted accounts enforce timestamps by default.** Encryption proves who
+  wrote a message but not *when*, so an account with a key rejects messages
+  whose timestamp has drifted. This applies from the moment a key is added,
+  including to an account that previously ran unencrypted. You can turn it off
+  per account with *Ignore message timestamps* if the panel's clock cannot be
+  trusted, but that removes the only real defence against replay.
+- **Timestamp enforcement cannot be bypassed by omission.** With enforcement
+  on, a message with a missing or unparseable timestamp is rejected rather
+  than waved through.
+- **Rejected messages never reach entities or automations.** A message that
+  fails any check is written to the activity log so you can see a misbehaving
+  panel, but it is not dispatched to entities or fired on the event bus.
+  Otherwise a forged code could trip the smoke or power sensors.
+- **Keys stay out of diagnostics and logs.** Diagnostics report only whether an
+  account is encrypted.
+
+### What the protocol cannot protect against
+
+DC-09 mandates AES-CBC with an all-zero IV and no message authentication. The
+CRC is unkeyed, so it detects corruption, not tampering. This is a property of
+the wire format, not of this implementation, and cannot be fixed without
+breaking compatibility with real panels.
+
+The practical consequences:
+
+- Encryption without authentication does not prove origin or freshness. Leave
+  *Ignore message timestamps* off for encrypted accounts, which is the default,
+  so a captured message stops working within about a minute.
+- If you must ignore timestamps because a panel's clock is unreliable, accept
+  that a captured message for that account can be replayed later. Weigh that
+  against the panel going silent when its clock drifts.
+- Treat network position as part of your threat model: put the receiver on a
+  trusted network segment rather than exposing it to the internet.
+- Duplicate detection is held in memory, so restarting Home Assistant clears
+  it. A message captured moments before a restart can be replayed until its
+  timestamp falls outside the accepted band.
+- Use a different key for each account so one compromised panel does not
+  expose the rest.
+
+If you find a security issue, please open an issue on this repository.
+
 ## Development
 
 ```bash

@@ -22,6 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hacs/action@main
+        env:
+          # Avoids anonymous API rate limits. It does not make the two content
+          # checks pass while the repository is private: HACS fetches hacs.json
+          # and the manifest without authentication, so it sees nothing and
+          # reports them as missing. They should pass once this is public.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           category: integration
           # Brand assets live in the PUBLIC home-assistant/brands repository.

@@ -33,7 +33,6 @@ ACCOUNT = {
     CONF_ACCOUNT: "1234",
     "name": "Front door",
     "heartbeat_timeout": 90,
-    "ignore_timestamps": True,
 }
 
 
@@ -169,6 +168,30 @@ async def test_valid_keys(hass: HomeAssistant, key: str) -> None:
     assert result["step_id"] == "add_another"
 
 
+async def test_new_encrypted_account_enforces_timestamps(hass: HomeAssistant) -> None:
+    """Adding a key must switch on replay protection for a new account.
+
+    The timestamp option is deliberately absent from the creation form: the
+    key is entered on the same form, so a checkbox there would have to render
+    the insecure default and would then be stored as a deliberate choice.
+    """
+    result = await _start(hass, {CONF_UDP_PORT: 10111, CONF_TCP_PORT: 10111})
+    assert "ignore_timestamps" not in {
+        str(key.schema) for key in result["data_schema"].schema
+    }
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**ACCOUNT, CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD"},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"add_another": False}
+    )
+    await hass.async_block_till_done()
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is False
+
+
 async def test_duplicate_account_rejected(hass: HomeAssistant) -> None:
     """The same account cannot be added twice."""
     result = await _start(hass, {CONF_UDP_PORT: 10106, CONF_TCP_PORT: 10106})
@@ -225,6 +248,68 @@ async def test_options_edit_receiver(hass: HomeAssistant) -> None:
     assert result["data"][CONF_UDP_PORT] == 10200
     # The accounts survive a receiver-only edit.
     assert len(result["data"][CONF_ACCOUNTS]) == 1
+
+
+async def test_adding_a_key_to_an_existing_account_enforces_timestamps(
+    hass: HomeAssistant,
+) -> None:
+    """Encrypting an existing account must switch on replay protection.
+
+    The stored value predates the key, and the checkbox on the edit form was
+    rendered before the key existed, so neither is a considered choice about
+    replay protection for an encrypted account.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            **RECEIVER,
+            CONF_ACCOUNTS: [{**ACCOUNT, "ignore_timestamps": True}],
+        },
+        options={},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            **ACCOUNT,
+            "ignore_timestamps": True,
+            CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD",
+        },
+    )
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is False
+
+
+async def test_editing_an_encrypted_account_keeps_a_deliberate_opt_out(
+    hass: HomeAssistant,
+) -> None:
+    """Once the key is already there, the checkbox is the user's decision."""
+    stored = {**ACCOUNT, CONF_ENCRYPTION_KEY: "ABCDABCDABCDABCDABCDABCDABCDABCD"}
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={**RECEIVER, CONF_ACCOUNTS: [stored]}, options={}
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "edit_account"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_ACCOUNT: "1234"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**stored, "ignore_timestamps": True}
+    )
+
+    assert result["data"][CONF_ACCOUNTS][0]["ignore_timestamps"] is True
 
 
 async def test_options_add_and_remove_account(hass: HomeAssistant) -> None:

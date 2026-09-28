@@ -17,7 +17,14 @@ from custom_components.sia_dc09.const import (
 from custom_components.sia_dc09.diagnostics import (
     async_get_config_entry_diagnostics,
 )
-from tests.test_integration import ACCOUNT, KEY_HEX, body, make_entry, send_udp
+from tests.test_integration import (
+    ACCOUNT,
+    KEY_HEX,
+    body,
+    make_entry,
+    send_udp,
+    stamp,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -170,13 +177,20 @@ async def test_services_removed_on_unload(hass: HomeAssistant) -> None:
 
 async def test_diagnostics_redacts_the_key(hass: HomeAssistant) -> None:
     """Diagnostics must never contain an encryption key."""
+    from custom_components.sia_dc09.dc09 import encrypt_body, parse_key
+
     entry = await make_entry(
         hass,
         accounts=[
             {"account": ACCOUNT, "name": "Front door", "encryption_key": KEY_HEX}
         ],
     )
-    await send_udp(hass, entry, body("BA001"))
+    key = parse_key(KEY_HEX)
+    assert key is not None
+
+    # The account has a key, so only encrypted traffic is accepted.
+    tail = encrypt_body(f"|Nri1/BA001]_{stamp()}", key)
+    await send_udp(hass, entry, f'"*SIA-DCS"0001R0L0#{ACCOUNT}[{tail}')
 
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
 

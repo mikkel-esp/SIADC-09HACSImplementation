@@ -9,9 +9,11 @@ integration so automations port across with minimal change.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -43,9 +45,11 @@ from .const import (
     DEFAULT_RESPOND,
     DEFAULT_RETENTION_MONTHS,
     DEFAULT_UNKNOWN_ACCOUNT_POLICY,
+    DUPLICATE_WINDOW_SECONDS,
     POLICY_AUTO_CREATE,
     POLICY_DISCOVER,
     POLICY_IGNORE,
+    REPLAY_CACHE_SIZE,
     SIA_DC09_EVENT,
     SIA_DC09_EVENT_ALL,
     SIA_DC09_HUB_UPDATED,
@@ -86,15 +90,21 @@ class AccountConfig:
         """Build an account configuration from stored config entry data."""
         account = normalise_account(data[CONF_ACCOUNT])
         raw_key = data.get(CONF_ENCRYPTION_KEY)
+        key = parse_key(raw_key) if raw_key else None
         return cls(
             account=account,
             name=data.get(CONF_NAME) or account,
-            key=parse_key(raw_key) if raw_key else None,
+            key=key,
             heartbeat_timeout=data.get(
                 CONF_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT
             ),
+            # Encryption on its own does not prove freshness, so an encrypted
+            # account enforces timestamps unless the user opts out. An
+            # unencrypted account gains nothing from the check, because an
+            # attacker could simply write whatever timestamp they liked.
             ignore_timestamps=data.get(
-                CONF_IGNORE_TIMESTAMPS, DEFAULT_IGNORE_TIMESTAMPS
+                CONF_IGNORE_TIMESTAMPS,
+                False if key is not None else DEFAULT_IGNORE_TIMESTAMPS,
             ),
             mapping=StatusMapping.build(
                 data.get(CONF_STATUS_MAP_OVERRIDE),
@@ -120,6 +130,12 @@ class SiaDc09Hub:
 
         self._receiver: Dc09Receiver | None = None
         self._unsubscribe: list[Any] = []
+
+        #: Recently applied message digests per account, used to reject
+        #: replays and panel retransmissions. Bounded by size and by age.
+        self._recent_digests: defaultdict[str, deque[tuple[bytes, datetime]]] = (
+            defaultdict(lambda: deque(maxlen=REPLAY_CACHE_SIZE))
+        )
 
         self.reload_options()
 
@@ -245,17 +261,19 @@ class SiaDc09Hub:
         config = self.accounts.get(account)
 
         if not message.decode.ok:
-            # The frame was readable enough to name an account, but its
-            # checksum or length is wrong, so nothing in it can be trusted to
-            # move an alarm state. It is still logged so the user can see a
-            # panel that is transmitting badly.
+            # Either the frame is corrupt, or it is cleartext for an account
+            # that requires encryption. In both cases the payload is
+            # attacker-controlled and unauthenticated, so it must not reach
+            # entities or the event bus - a forged code would otherwise be
+            # able to trip a smoke or power sensor. It is still recorded so
+            # the user can see a misconfigured or misbehaving panel.
             _LOGGER.warning(
-                "Rejecting corrupt message for account %s: %s",
+                "Rejecting message for account %s: %s",
                 account,
                 "; ".join(message.decode.errors),
             )
             if config is not None:
-                await self._async_publish(build_event(message, account, None))
+                await self._async_record_only(build_event(message, account, None))
             return
 
         if config is None:
@@ -267,6 +285,17 @@ class SiaDc09Hub:
                 "Rejecting message for account %s: timestamp drifts %s seconds",
                 account,
                 frame.timestamp_drift_seconds,
+            )
+            return
+
+        if self._is_duplicate(config, account, message):
+            # Most likely a panel retransmitting because our ACK was lost.
+            # The listener has already acknowledged it, so applying it a
+            # second time would be wrong.
+            _LOGGER.debug(
+                "Ignoring duplicate message for account %s (sequence %s)",
+                account,
+                frame.sequence,
             )
             return
 
@@ -301,6 +330,18 @@ class SiaDc09Hub:
         # subscribe to one panel or to everything.
         self.hass.bus.async_fire(SIA_DC09_EVENT.format(event.account), payload)
         self.hass.bus.async_fire(SIA_DC09_EVENT_ALL, payload)
+        async_dispatcher_send(
+            self.hass, SIA_DC09_HUB_UPDATED.format(self.entry.entry_id)
+        )
+
+    async def _async_record_only(self, event: SiaDc09Event) -> None:
+        """Store an event for auditing without letting anything act on it.
+
+        Used for messages that failed validation. They belong in the activity
+        log so a bad panel is visible, but they must never reach entities or
+        automations, because nothing in them has been authenticated.
+        """
+        await self.store.async_add(event_to_record(event))
         async_dispatcher_send(
             self.hass, SIA_DC09_HUB_UPDATED.format(self.entry.entry_id)
         )
@@ -342,15 +383,57 @@ class SiaDc09Hub:
 
         Rejecting stale timestamps defeats replay attacks, which is the reason
         DC-09 carries one at all, but a panel with a wrong clock would then go
-        silent. The per-account default is therefore to ignore timestamps.
+        silent. Accounts without a key therefore ignore timestamps by default,
+        since an unauthenticated timestamp is attacker-writable anyway.
         """
         if config.ignore_timestamps:
             return True
         frame = message.decode.frame
-        if frame is None or frame.timestamp_drift_seconds is None:
-            return True
+        if frame is None:
+            return False
+        if frame.timestamp_drift_seconds is None:
+            # Enforcement is on but the message carries no usable timestamp.
+            # Accepting it would let an attacker bypass the check simply by
+            # omitting or corrupting the field.
+            return False
         drift = frame.timestamp_drift_seconds
         return -TIMEBAND_FUTURE <= drift <= TIMEBAND_PAST
+
+    def _is_duplicate(
+        self, config: AccountConfig, account: str, message: ReceivedMessage
+    ) -> bool:
+        """Return whether this exact message arrived moments ago.
+
+        Keyed on a digest of the raw bytes, so it catches a panel retransmitting
+        after a lost ACK as well as an immediate replay.
+
+        How long a digest is worth keeping depends on whether timestamps are
+        enforced. When they are, the cache has to outlive the window in which a
+        captured message still looks fresh, or a replay simply waits for the
+        digest to expire; a genuinely new event carries a different timestamp or
+        sequence number, so it hashes differently and is never mistaken for a
+        duplicate. When timestamps are ignored, two identical events really are
+        indistinguishable, so the window stays short and this only absorbs
+        retransmissions. Either way it deduplicates, it does not authenticate.
+        """
+        digest = hashlib.sha256(message.raw).digest()
+        now = message.received_at
+        seen = self._recent_digests[account]
+
+        window = (
+            DUPLICATE_WINDOW_SECONDS
+            if config.ignore_timestamps
+            else TIMEBAND_PAST + TIMEBAND_FUTURE
+        )
+        cutoff = now - timedelta(seconds=window)
+        while seen and seen[0][1] < cutoff:
+            seen.popleft()
+
+        if any(known == digest for known, _ in seen):
+            return True
+
+        seen.append((digest, now))
+        return False
 
     # --- scheduled work ------------------------------------------------------
 

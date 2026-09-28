@@ -80,7 +80,13 @@ def _decode_with_account_key(
 
     header = peek_header(datagram)
     key = config.key_for(header.account) if header is not None else None
-    return decode(datagram, key=key, received_at=received_at)
+    return decode(
+        datagram,
+        key=key,
+        received_at=received_at,
+        # A configured key means cleartext for that account is forged.
+        require_encryption=key is not None,
+    )
 
 
 def _choose_response(
