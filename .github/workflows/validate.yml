@@ -24,6 +24,9 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Brand assets live in the home-assistant/brands repository, which
+          # needs a separate submission. Drop this once that is merged.
+          ignore: brands
 
   lint:
     name: Ruff
