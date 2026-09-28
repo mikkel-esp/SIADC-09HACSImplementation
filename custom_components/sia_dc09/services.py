@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from dataclasses import replace
 from typing import Any
 
@@ -17,6 +18,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_ACCOUNT,
@@ -35,7 +37,14 @@ from .const import (
     SERVICE_SET_STATUS,
     SIA_DC09_HUB_UPDATED,
 )
-from .dc09 import decode, parse_key, to_hex, wire_to_bytes
+from .dc09 import (
+    Dc09CryptoError,
+    build_frame,
+    decode,
+    parse_key,
+    to_hex,
+    wire_to_bytes,
+)
 from .state_machine import SiaStatus
 from .utils import normalise_account
 
@@ -141,26 +150,42 @@ async def _async_set_status(call: ServiceCall) -> None:
 
     current = hub.states[account]
     hub.states[account] = replace(current, status=status, previous=current.status)
-    async_dispatcher_send(
-        call.hass, SIA_DC09_HUB_UPDATED.format(hub.entry.entry_id)
-    )
+    async_dispatcher_send(call.hass, SIA_DC09_HUB_UPDATED.format(hub.entry.entry_id))
+
+
+def _to_datagram(raw: str) -> bytes:
+    """Turn whatever the user pasted into bytes to decode.
+
+    Three things are accepted, because all three are what people actually have
+    to hand: a hex dump, a full wire capture including the framing, and a bare
+    message body copied out of a panel manual or another receiver's log. The
+    body is re-framed so its checksum and length are computed rather than
+    reported as wrong.
+    """
+    with suppress(ValueError):
+        return bytes.fromhex(raw.replace(" ", "").replace("\n", ""))
+
+    datagram = wire_to_bytes(raw)
+    if raw.startswith('"') or raw.startswith('*"'):
+        return build_frame(raw)
+    return datagram
 
 
 async def _async_decode_message(call: ServiceCall) -> ServiceResponse:
     """Decode a DC-09 message by hand, for troubleshooting a panel."""
     raw = call.data[ATTR_MESSAGE].strip()
-    try:
-        datagram = bytes.fromhex(raw.replace(" ", ""))
-    except ValueError:
-        datagram = wire_to_bytes(raw)
 
     key = None
     if raw_key := call.data.get("key"):
-        key = parse_key(raw_key)
+        try:
+            key = parse_key(raw_key)
+        except Dc09CryptoError as err:
+            raise ServiceValidationError(str(err)) from err
         if key is None:
             raise ServiceValidationError("The supplied key is not valid")
 
-    result = decode(datagram, key=key)
+    datagram = _to_datagram(raw)
+    result = decode(datagram, key=key, received_at=dt_util.utcnow())
     frame = result.frame
     payload = result.payload
 
@@ -213,7 +238,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_CLEAR_ACTIVITY, _async_clear_activity,
+        DOMAIN,
+        SERVICE_CLEAR_ACTIVITY,
+        _async_clear_activity,
         schema=CLEAR_ACTIVITY_SCHEMA,
     )
     hass.services.async_register(

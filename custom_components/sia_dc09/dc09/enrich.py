@@ -83,9 +83,7 @@ def _address_label(meaning: str | None, address: str | None) -> str | None:
     return f"{meaning} {address.lstrip('0') or '0'}"
 
 
-def _summarise(
-    token: str, events: tuple[EnrichedEvent, ...], link_test: bool
-) -> str:
+def _summarise(token: str, events: tuple[EnrichedEvent, ...], link_test: bool) -> str:
     if link_test:
         return "Link test (NULL) - supervision heartbeat, no event reported"
     if not events:

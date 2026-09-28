@@ -221,9 +221,7 @@ def _parse_header(message: str) -> _ParsedHeader:
     if cursor < len(message) and message[cursor] == "R":
         prefix_index = message.find("L", cursor)
         if prefix_index < 0:
-            raise Dc09ParseError(
-                "Receiver field is not followed by an L prefix field."
-            )
+            raise Dc09ParseError("Receiver field is not followed by an L prefix field.")
         receiver = message[cursor + 1 : prefix_index]
         cursor = prefix_index
 

@@ -1,0 +1,3 @@
+# pytest-homeassistant-custom-component pins a matching Home Assistant and the
+# whole test stack, so it is the only thing that needs pinning here.
+pytest-homeassistant-custom-component==0.13.205

@@ -172,9 +172,7 @@ class SiaDc09Hub:
                 udp_port=options.get(CONF_UDP_PORT),
                 tcp_port=options.get(CONF_TCP_PORT),
                 respond=options.get(CONF_RESPOND, DEFAULT_RESPOND),
-                nak_on_bad_crc=options.get(
-                    CONF_NAK_ON_BAD_CRC, DEFAULT_NAK_ON_BAD_CRC
-                ),
+                nak_on_bad_crc=options.get(CONF_NAK_ON_BAD_CRC, DEFAULT_NAK_ON_BAD_CRC),
                 key_for=self.key_for,
                 on_message=self.async_handle_message,
                 is_known_account=self.is_known_account,

@@ -82,9 +82,7 @@ class SiaDc09AlarmControlPanel(SiaDc09Entity, AlarmControlPanelEntity):
         """Build the panel and wire up whichever arming targets exist."""
         super().__init__(hub, account, KEY_ALARM)
         self._targets: dict[str, str] = {
-            action: raw[key]
-            for action, key in _TARGETS.items()
-            if raw.get(key)
+            action: raw[key] for action, key in _TARGETS.items() if raw.get(key)
         }
 
         features = AlarmControlPanelEntityFeature(0)

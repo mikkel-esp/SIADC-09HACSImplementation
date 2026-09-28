@@ -7,9 +7,7 @@ from datetime import datetime
 from typing import Literal
 
 Dc09Protocol = Literal["SIA-DCS", "ADM-CID", "NULL", "OTHER"]
-EventSeverity = Literal[
-    "alarm", "trouble", "supervisory", "status", "test", "unknown"
-]
+EventSeverity = Literal["alarm", "trouble", "supervisory", "status", "test", "unknown"]
 ResponseKind = Literal["ACK", "NAK", "DUH", "NONE"]
 Transport = Literal["udp", "tcp"]
 

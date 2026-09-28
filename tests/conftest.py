@@ -46,6 +46,4 @@ def decode_text(
     text: str, key: bytes | None = None, received_at: datetime | None = None
 ) -> DecodeResult:
     """Decode a latin-1 message written as a Python string."""
-    return decode(
-        wire_to_bytes(text), key=key, received_at=received_at or RECEIVED_AT
-    )
+    return decode(wire_to_bytes(text), key=key, received_at=received_at or RECEIVED_AT)

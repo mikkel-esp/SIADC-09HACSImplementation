@@ -147,9 +147,10 @@ async def test_bad_crc_is_silent_when_nak_is_disabled() -> None:
     framed = bytearray(build_frame(sia_body()))
     framed[1] = ord("0") if framed[1] != ord("0") else ord("1")
 
-    async with running_receiver(
-        udp_port=0, tcp_port=None, nak_on_bad_crc=False
-    ) as (receiver, collector):
+    async with running_receiver(udp_port=0, tcp_port=None, nak_on_bad_crc=False) as (
+        receiver,
+        collector,
+    ):
         await send_udp(udp_port_of(receiver), bytes(framed), expect_reply=False)
         await collector.wait()
 
@@ -204,9 +205,10 @@ async def test_per_account_key_is_chosen_from_the_cleartext_header() -> None:
     body = f'"*SIA-DCS"0001R0L0#{ACCOUNT}[{encrypted_tail}'
 
     keys = {ACCOUNT: key}
-    async with running_receiver(
-        udp_port=0, tcp_port=None, key_for=keys.get
-    ) as (receiver, collector):
+    async with running_receiver(udp_port=0, tcp_port=None, key_for=keys.get) as (
+        receiver,
+        collector,
+    ):
         await send_udp(udp_port_of(receiver), build_frame(body))
         await collector.wait()
 
@@ -286,9 +288,10 @@ async def test_tcp_leading_noise_is_discarded() -> None:
 
 
 async def test_idle_tcp_connection_is_dropped() -> None:
-    async with running_receiver(
-        udp_port=None, tcp_port=0, tcp_idle_timeout=0.2
-    ) as (receiver, _collector):
+    async with running_receiver(udp_port=None, tcp_port=0, tcp_idle_timeout=0.2) as (
+        receiver,
+        _collector,
+    ):
         reader, writer = await asyncio.open_connection(
             "127.0.0.1", tcp_port_of(receiver)
         )

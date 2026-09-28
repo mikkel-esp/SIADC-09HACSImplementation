@@ -53,9 +53,7 @@ def extract_frames(
         if end == -1:
             pending = rest[start:]
             if len(pending) > max_frame_bytes:
-                return FrameExtraction(
-                    tuple(frames), b"", discarded + len(pending)
-                )
+                return FrameExtraction(tuple(frames), b"", discarded + len(pending))
             return FrameExtraction(tuple(frames), pending, discarded)
 
         frames.append(rest[start : end + 1])
