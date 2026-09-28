@@ -1,0 +1,288 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SIA DC-09 receiver",
+        "description": "Choose where the receiver listens for alarm messages. Leave a port empty to disable that transport.",
+        "data": {
+          "bind_host": "Bind address",
+          "udp_port": "UDP port",
+          "tcp_port": "TCP port",
+          "respond": "Send ACK and NAK responses",
+          "nak_on_bad_crc": "Send NAK when the checksum fails",
+          "unknown_account_policy": "Unknown accounts",
+          "retention_months": "Keep activity for (months)",
+          "recent_events_in_attributes": "Recent events kept on the activity sensor"
+        },
+        "data_description": {
+          "bind_host": "Use 0.0.0.0 to listen on every network interface.",
+          "respond": "Most panels retry forever until they are acknowledged.",
+          "nak_on_bad_crc": "Turn this off if a panel gets stuck retransmitting a message it cannot send correctly.",
+          "unknown_account_policy": "What to do when a message arrives for an account you have not configured.",
+          "retention_months": "Activity older than this is deleted automatically."
+        }
+      },
+      "account": {
+        "title": "Add an account",
+        "description": "Each account number becomes a device with its own alarm panel, status, heartbeat and activity log.",
+        "data": {
+          "account": "Account number",
+          "name": "Name",
+          "encryption_key": "Encryption key",
+          "heartbeat_timeout": "Heartbeat timeout (minutes)",
+          "ignore_timestamps": "Ignore message timestamps",
+          "arm_away_target": "Arm away target",
+          "arm_home_target": "Arm home target",
+          "arm_night_target": "Arm night target",
+          "disarm_target": "Disarm target"
+        },
+        "data_description": {
+          "account": "The hexadecimal account number the panel transmits, 3 to 16 characters.",
+          "encryption_key": "Optional AES key as 32, 48 or 64 hexadecimal characters. Leave empty for unencrypted messages.",
+          "heartbeat_timeout": "The account is marked offline when nothing is received for this long.",
+          "ignore_timestamps": "Leave on unless your panel's clock is reliably synchronised.",
+          "arm_away_target": "Optional. DC-09 is receive only, so arming from Home Assistant runs this script, scene or button instead."
+        }
+      },
+      "add_another": {
+        "title": "Another account?",
+        "description": "Configured so far: {accounts}",
+        "data": {
+          "add_another": "Add another account"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "That is not a valid IP address.",
+      "no_transport": "Enable at least one of the UDP or TCP ports.",
+      "invalid_account": "Account numbers must be 3 to 16 hexadecimal characters.",
+      "duplicate_account": "That account number is already configured.",
+      "invalid_key": "The key must be 32, 48 or 64 hexadecimal characters."
+    },
+    "abort": {
+      "already_configured": "A receiver is already listening on those ports."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SIA DC-09",
+        "menu_options": {
+          "receiver": "Receiver settings",
+          "add_account": "Add an account",
+          "edit_account": "Edit an account",
+          "remove_account": "Remove accounts"
+        }
+      },
+      "receiver": {
+        "title": "Receiver settings",
+        "data": {
+          "bind_host": "Bind address",
+          "udp_port": "UDP port",
+          "tcp_port": "TCP port",
+          "respond": "Send ACK and NAK responses",
+          "nak_on_bad_crc": "Send NAK when the checksum fails",
+          "unknown_account_policy": "Unknown accounts",
+          "retention_months": "Keep activity for (months)",
+          "recent_events_in_attributes": "Recent events kept on the activity sensor"
+        }
+      },
+      "add_account": {
+        "title": "Add an account",
+        "data": {
+          "account": "Account number",
+          "name": "Name",
+          "encryption_key": "Encryption key",
+          "heartbeat_timeout": "Heartbeat timeout (minutes)",
+          "ignore_timestamps": "Ignore message timestamps",
+          "arm_away_target": "Arm away target",
+          "arm_home_target": "Arm home target",
+          "arm_night_target": "Arm night target",
+          "disarm_target": "Disarm target"
+        }
+      },
+      "edit_account": {
+        "title": "Edit an account",
+        "data": {
+          "account": "Account number",
+          "name": "Name",
+          "encryption_key": "Encryption key",
+          "heartbeat_timeout": "Heartbeat timeout (minutes)",
+          "ignore_timestamps": "Ignore message timestamps",
+          "arm_away_target": "Arm away target",
+          "arm_home_target": "Arm home target",
+          "arm_night_target": "Arm night target",
+          "disarm_target": "Disarm target"
+        }
+      },
+      "remove_account": {
+        "title": "Remove accounts",
+        "description": "Removing an account deletes its entities. Its stored activity is kept until you clear it.",
+        "data": {
+          "accounts": "Accounts to remove"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "That is not a valid IP address.",
+      "no_transport": "Enable at least one of the UDP or TCP ports.",
+      "invalid_account": "Account numbers must be 3 to 16 hexadecimal characters.",
+      "duplicate_account": "That account number is already configured.",
+      "invalid_key": "The key must be 32, 48 or 64 hexadecimal characters."
+    },
+    "abort": {
+      "no_accounts": "There are no accounts configured yet."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "disarmed": "Disarmed",
+        "armed_away": "Armed away",
+        "armed_home": "Armed home",
+        "armed_night": "Armed night",
+        "armed_vacation": "Armed vacation",
+        "armed_custom_bypass": "Armed custom bypass",
+        "arming": "Arming",
+        "disarming": "Disarming",
+        "pending": "Pending",
+        "triggered": "Triggered",
+        "panic": "Panic",
+        "unknown": "Unknown"
+      }
+    },
+    "unknown_account_policy": {
+      "options": {
+        "discover": "List them on the unknown accounts sensor",
+        "ignore": "Ignore them completely",
+        "auto_create": "Create entities for them automatically"
+      }
+    }
+  },
+  "entity": {
+    "alarm_control_panel": {
+      "alarm": {
+        "name": "Alarm"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "disarmed": "Disarmed",
+          "armed_away": "Armed away",
+          "armed_home": "Armed home",
+          "armed_night": "Armed night",
+          "armed_vacation": "Armed vacation",
+          "armed_custom_bypass": "Armed custom bypass",
+          "arming": "Arming",
+          "disarming": "Disarming",
+          "pending": "Pending",
+          "triggered": "Triggered",
+          "panic": "Panic",
+          "unknown": "Unknown"
+        }
+      },
+      "last_heartbeat": {
+        "name": "Last heartbeat"
+      },
+      "last_activity": {
+        "name": "Last activity"
+      },
+      "messages_received": {
+        "name": "Messages received"
+      },
+      "unknown_accounts": {
+        "name": "Unknown accounts"
+      }
+    },
+    "binary_sensor": {
+      "smoke": {
+        "name": "Smoke"
+      },
+      "moisture": {
+        "name": "Moisture"
+      },
+      "power": {
+        "name": "Power"
+      },
+      "battery": {
+        "name": "Battery"
+      }
+    }
+  },
+  "services": {
+    "get_activity": {
+      "name": "Get activity",
+      "description": "Returns stored activity for one account or for every account.",
+      "fields": {
+        "account": {
+          "name": "Account",
+          "description": "Limit the results to one account number."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Only return events at or after this time."
+        },
+        "end": {
+          "name": "End",
+          "description": "Only return events at or before this time."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "The maximum number of events to return."
+        },
+        "include_tests": {
+          "name": "Include tests",
+          "description": "Include automatic test and heartbeat messages."
+        },
+        "severity": {
+          "name": "Severity",
+          "description": "Only return events of this severity."
+        }
+      }
+    },
+    "clear_activity": {
+      "name": "Clear activity",
+      "description": "Deletes stored activity for one account, or for every account when none is given.",
+      "fields": {
+        "account": {
+          "name": "Account",
+          "description": "Limit the deletion to one account number."
+        }
+      }
+    },
+    "purge": {
+      "name": "Purge",
+      "description": "Deletes activity older than the configured retention period straight away."
+    },
+    "set_status": {
+      "name": "Set status",
+      "description": "Overrides an account's status. Useful when a panel was armed or disarmed without a report reaching Home Assistant.",
+      "fields": {
+        "account": {
+          "name": "Account",
+          "description": "The account number to change."
+        },
+        "status": {
+          "name": "Status",
+          "description": "The status to apply."
+        }
+      }
+    },
+    "decode_message": {
+      "name": "Decode message",
+      "description": "Decodes a raw DC-09 message for troubleshooting.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "The message as hexadecimal bytes or as printable text."
+        },
+        "key": {
+          "name": "Key",
+          "description": "Optional AES key to decrypt the message with."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+get_activity:
+  fields:
+    account:
+      required: false
+      example: "1234"
+      selector:
+        text:
+    start:
+      required: false
+      selector:
+        datetime:
+    end:
+      required: false
+      selector:
+        datetime:
+    limit:
+      required: false
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 10000
+          mode: box
+    include_tests:
+      required: false
+      default: false
+      selector:
+        boolean:
+    severity:
+      required: false
+      selector:
+        select:
+          options:
+            - info
+            - warning
+            - alarm
+
+clear_activity:
+  fields:
+    account:
+      required: false
+      example: "1234"
+      selector:
+        text:
+
+purge:
+
+set_status:
+  fields:
+    account:
+      required: true
+      example: "1234"
+      selector:
+        text:
+    status:
+      required: true
+      selector:
+        select:
+          translation_key: status
+          options:
+            - disarmed
+            - armed_away
+            - armed_home
+            - armed_night
+            - armed_vacation
+            - armed_custom_bypass
+            - arming
+            - disarming
+            - pending
+            - triggered
+            - panic
+            - unknown
+
+decode_message:
+  fields:
+    message:
+      required: true
+      example: '"SIA-DCS"0001R0L0#1234[|Nri1/BA001]'
+      selector:
+        text:
+    key:
+      required: false
+      selector:
+        text:

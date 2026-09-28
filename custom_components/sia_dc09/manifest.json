@@ -1,0 +1,13 @@
+{
+  "domain": "sia_dc09",
+  "name": "SIA DC-09 Control Center",
+  "codeowners": ["@mikkel-esp"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/mikkel-esp/SIADC-09HACSImplementation",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/mikkel-esp/SIADC-09HACSImplementation/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
