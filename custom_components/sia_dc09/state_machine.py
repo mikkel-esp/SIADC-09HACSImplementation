@@ -8,6 +8,7 @@ asserts it is empty.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
@@ -351,6 +352,51 @@ def apply_message(
         changed=status != before,
         is_test=False,
         code=driving_code,
+    )
+
+
+def restore_state(
+    statuses: Sequence[str],
+    last_message_at: datetime | None = None,
+    last_activity_at: datetime | None = None,
+    last_code: str | None = None,
+) -> AccountState:
+    """Rebuild an account's state from the statuses its messages produced.
+
+    Home Assistant learns nothing about a panel until it speaks, and a quiet
+    alarm may not speak for hours, so after a restart the stored history is the
+    only evidence of whether the house is armed.
+
+    Replaying the recorded statuses rather than the raw codes means the
+    restored state can only ever be what this integration already decided at
+    the time. The one thing that has to be worked out again is which state to
+    return to when an alarm is restored, which is the last state that was not
+    itself an alarm.
+    """
+    status = SiaStatus.UNKNOWN
+    previous = SiaStatus.UNKNOWN
+
+    for value in statuses:
+        try:
+            after = SiaStatus(value)
+        except ValueError:
+            # A status written by a newer version, or a corrupted row. Skipping
+            # it is better than abandoning the whole restore.
+            continue
+
+        if after in STICKY_STATES:
+            if status not in STICKY_STATES:
+                previous = status
+        else:
+            previous = after
+        status = after
+
+    return AccountState(
+        status=status,
+        previous=previous,
+        last_message_at=last_message_at,
+        last_activity_at=last_activity_at,
+        last_code=last_code,
     )
 
 

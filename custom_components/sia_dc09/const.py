@@ -109,6 +109,7 @@ SERVICE_CLEAR_ACTIVITY: Final = "clear_activity"
 SERVICE_PURGE: Final = "purge"
 SERVICE_SET_STATUS: Final = "set_status"
 SERVICE_DECODE_MESSAGE: Final = "decode_message"
+SERVICE_RELOAD: Final = "reload"
 
 # --- Event payload attributes ------------------------------------------------
 

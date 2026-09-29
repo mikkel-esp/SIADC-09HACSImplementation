@@ -14,16 +14,27 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.typing import ConfigType
 
 from .const import CONF_ACCOUNT, CONF_ACCOUNTS, DOMAIN, PLATFORMS
 from .hub import SiaDc09Hub
-from .services import async_setup_services, async_unload_services
+from .services import (
+    async_setup_reload_service,
+    async_setup_services,
+    async_unload_services,
+)
 from .store import ActivityStore
 from .utils import normalise_account
 
 _LOGGER = logging.getLogger(__name__)
 
 type SiaDc09ConfigEntry = ConfigEntry[SiaDc09Hub]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register services that must exist even when no receiver is running."""
+    async_setup_reload_service(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SiaDc09ConfigEntry) -> bool:

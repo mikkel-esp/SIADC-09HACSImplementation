@@ -14,7 +14,7 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.const import CONF_NAME
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 
 from .const import (
@@ -198,6 +198,47 @@ def clean_receiver(data: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
+WILDCARD_HOSTS = {DEFAULT_BIND_HOST, "::", "::0"}
+
+
+def _hosts_overlap(first: str, second: str) -> bool:
+    """Return whether two bind addresses compete for the same port.
+
+    A wildcard claims every interface, so it collides with anything. Two
+    different explicit addresses do not.
+    """
+    if first in WILDCARD_HOSTS or second in WILDCARD_HOSTS:
+        return True
+    return first == second
+
+
+def port_conflicts(
+    hass: HomeAssistant, data: dict[str, Any], *, exclude: str | None = None
+) -> dict[str, str]:
+    """Return per-field errors for ports another receiver already listens on.
+
+    Without this the entry is created, the socket fails to bind, and Home
+    Assistant retries setup forever: the receiver appears to have been added
+    but never produces a single entity, with only the log saying why.
+    """
+    errors: dict[str, str] = {}
+    host = data[CONF_BIND_HOST].strip()
+
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.entry_id == exclude:
+            continue
+        other = {**entry.data, **entry.options}
+        if not _hosts_overlap(host, str(other.get(CONF_BIND_HOST, "")).strip()):
+            continue
+        for key in (CONF_UDP_PORT, CONF_TCP_PORT):
+            # Each transport only competes with the same transport, so one
+            # receiver may serve UDP and TCP on the same port number.
+            if data.get(key) and data.get(key) == other.get(key):
+                errors[key] = "port_in_use"
+
+    return errors
+
+
 def validate_receiver(data: dict[str, Any]) -> dict[str, str]:
     """Return per-field errors for the receiver settings."""
     errors: dict[str, str] = {}
@@ -307,12 +348,8 @@ class SiaDc09ConfigFlow(ConfigFlow, domain=DOMAIN):
             errors = validate_receiver(user_input)
             if not errors:
                 cleaned = clean_receiver(user_input)
-                self._async_abort_entries_match(
-                    {
-                        CONF_UDP_PORT: cleaned[CONF_UDP_PORT],
-                        CONF_TCP_PORT: cleaned[CONF_TCP_PORT],
-                    }
-                )
+                errors = port_conflicts(self.hass, cleaned)
+            if not errors:
                 self._receiver = cleaned
                 return await self.async_step_account()
 
@@ -420,7 +457,12 @@ class SiaDc09OptionsFlow(OptionsFlow):
         if user_input is not None:
             errors = validate_receiver(user_input)
             if not errors:
-                return self._async_save({**self._current, **clean_receiver(user_input)})
+                cleaned = clean_receiver(user_input)
+                errors = port_conflicts(
+                    self.hass, cleaned, exclude=self.config_entry.entry_id
+                )
+            if not errors:
+                return self._async_save({**self._current, **cleaned})
 
         return self.async_show_form(
             step_id="receiver",

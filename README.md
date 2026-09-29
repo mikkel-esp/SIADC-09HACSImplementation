@@ -183,6 +183,19 @@ Because DC-09 only reports, a disarm at the keypad whose closing report is lost
 would leave Home Assistant out of date forever. Use the `sia_dc09.set_status`
 service to correct it.
 
+#### After a restart
+
+A panel only reports changes, so nothing arrives to say "still armed". On
+startup each account is restored from its stored activity: the statuses its
+messages produced are replayed, so the status, the state an alarm would restore
+to, and the last heartbeat all come back as they were. An alarm left armed
+overnight reads as armed again rather than unknown.
+
+Only the statuses this integration already recorded are replayed, so a restart
+cannot invent a state the panel never reported. An account that has never sent
+anything stays `unknown`, and reloading the entry after a settings change keeps
+whatever is already known instead of re-reading the database.
+
 ### Arming
 
 DC-09 is a one way protocol: a receiver cannot command a panel. If you have some
@@ -266,6 +279,7 @@ and so on) keep the names Home Assistant's built-in `sia` integration uses.
 | `sia_dc09.purge` | — | Applies the retention window immediately. |
 | `sia_dc09.set_status` | — | Overrides an account's status when a report was lost. |
 | `sia_dc09.decode_message` | response | Decodes a raw message. Accepts a hex dump, a full wire capture, or a bare message body. |
+| `sia_dc09.reload` | — | Restarts the receivers, closing and reopening their ports. Pass `account` to restart only one. |
 
 ```yaml
 action: sia_dc09.get_activity
@@ -301,6 +315,12 @@ reconfiguring anything.
 key, unencrypted messages for it are rejected and NAKed on purpose - see
 [Security](#security). Either configure the key on the panel too, or clear it
 here.
+
+**A receiver was added but has no entities.** Its port could not be bound. The
+setup form now refuses a port another SIA DC-09 receiver already uses, but
+something outside Home Assistant can hold one too. Free the port, then call
+`sia_dc09.reload` — it is registered even when no receiver is running, which is
+exactly the case here.
 
 ### Identifying an unknown account
 

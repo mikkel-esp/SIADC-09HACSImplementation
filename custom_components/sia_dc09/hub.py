@@ -62,7 +62,13 @@ from .dc09 import ReceivedMessage, parse_key
 from .discovery import UnknownAccountLog
 from .listener import Dc09Receiver, ReceiverConfig
 from .models import SiaDc09Event, build_event
-from .state_machine import AccountState, SiaStatus, StatusMapping, apply_message
+from .state_machine import (
+    AccountState,
+    SiaStatus,
+    StatusMapping,
+    apply_message,
+    restore_state,
+)
 from .store import ActivityStore
 from .utils import clean_users, event_to_record, normalise_account
 
@@ -187,6 +193,7 @@ class SiaDc09Hub:
     async def async_setup(self) -> None:
         """Open the database and start listening."""
         await self.store.async_setup()
+        await self.async_restore_states()
 
         options = self.options
         self._receiver = Dc09Receiver(
@@ -212,6 +219,35 @@ class SiaDc09Hub:
                 self.hass, self._async_check_heartbeats, HEARTBEAT_INTERVAL
             )
         )
+
+    async def async_restore_states(self) -> None:
+        """Work out where each account stood, from what it has already sent.
+
+        A panel only reports changes, so nothing arrives to say "still armed"
+        after a restart. Without this the house would read as unknown until the
+        next arm or disarm, which for an alarm left armed overnight is exactly
+        when the state matters.
+
+        Only accounts with no state yet are restored, so a reload caused by an
+        options change never overwrites what is already known.
+        """
+        for account in self.accounts:
+            if self.states.get(account, AccountState()).status is not SiaStatus.UNKNOWN:
+                continue
+            history = await self.store.async_get_history(account)
+            if not history.statuses and history.last_message_at is None:
+                continue
+            self.states[account] = restore_state(
+                history.statuses,
+                last_message_at=history.last_message_at,
+                last_activity_at=history.last_activity_at,
+                last_code=history.last_code,
+            )
+            _LOGGER.debug(
+                "Restored account %s as %s from stored activity",
+                account,
+                self.states[account].status,
+            )
 
     async def async_unload(self) -> None:
         """Stop listening and flush anything still buffered."""

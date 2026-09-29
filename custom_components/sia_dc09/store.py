@@ -15,7 +15,7 @@ import json
 import logging
 import sqlite3
 from contextlib import closing, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -166,6 +166,29 @@ def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         with suppress(json.JSONDecodeError):
             data["extra"] = json.loads(data["extra"])
     return data
+
+
+def _parse(value: Any) -> datetime | None:
+    """Return a stored timestamp as an aware datetime."""
+    if not value:
+        return None
+    parsed = dt_util.parse_datetime(str(value))
+    return dt_util.as_utc(parsed) if parsed is not None else None
+
+
+@dataclass(slots=True)
+class AccountHistory:
+    """What an account's stored messages say about it.
+
+    ``statuses`` holds the status each message left the account in, oldest
+    first, so replaying it reproduces the state machine's own conclusions
+    rather than guessing at them again from the raw codes.
+    """
+
+    last_message_at: datetime | None = None
+    last_activity_at: datetime | None = None
+    statuses: list[str] = field(default_factory=list)
+    last_code: str | None = None
 
 
 class ActivityStore:
@@ -327,6 +350,41 @@ class ActivityStore:
 
         with closing(self._connect()) as conn:
             return [_row_to_dict(row) for row in conn.execute(sql, params)]
+
+    async def async_get_history(self, account: str, limit: int = 50) -> AccountHistory:
+        """Return what is known about an account from what it has already sent.
+
+        Used to restore an account after a restart. Home Assistant has no idea
+        whether a panel is armed until it sends its next message, which for a
+        quiet alarm can be hours away, so the last messages it did send are the
+        only evidence available.
+        """
+        await self.async_flush()
+        return await self.hass.async_add_executor_job(self._history, account, limit)
+
+    def _history(self, account: str, limit: int) -> AccountHistory:
+        with closing(self._connect()) as conn:
+            seen = conn.execute(
+                "SELECT MAX(received_at) AS last_message, "
+                "MAX(CASE WHEN is_test = 0 THEN received_at END) AS last_activity "
+                "FROM events WHERE entry_id = ? AND account = ?",
+                (self.entry_id, account),
+            ).fetchone()
+
+            rows = conn.execute(
+                "SELECT status_after, code FROM events "
+                "WHERE entry_id = ? AND account = ? AND status_after IS NOT NULL "
+                "ORDER BY received_at DESC, id DESC LIMIT ?",
+                (self.entry_id, account, max(1, min(limit, 1000))),
+            ).fetchall()
+
+        return AccountHistory(
+            last_message_at=_parse(seen["last_message"] if seen else None),
+            last_activity_at=_parse(seen["last_activity"] if seen else None),
+            # Oldest first, so it can be replayed in the order it happened.
+            statuses=[str(row["status_after"]) for row in reversed(rows)],
+            last_code=str(rows[0]["code"]) if rows and rows[0]["code"] else None,
+        )
 
     async def async_count(self, account: str | None = None) -> int:
         """Return how many rows are stored, optionally for one account."""

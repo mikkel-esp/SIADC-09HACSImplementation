@@ -8,6 +8,7 @@ from dataclasses import replace
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -29,11 +30,13 @@ from .const import (
     ATTR_SEVERITY,
     ATTR_START,
     ATTR_STATUS,
+    CONF_ACCOUNTS,
     DOMAIN,
     SERVICE_CLEAR_ACTIVITY,
     SERVICE_DECODE_MESSAGE,
     SERVICE_GET_ACTIVITY,
     SERVICE_PURGE,
+    SERVICE_RELOAD,
     SERVICE_SET_STATUS,
     SIA_DC09_HUB_UPDATED,
 )
@@ -80,6 +83,41 @@ DECODE_MESSAGE_SCHEMA = vol.Schema(
         vol.Optional("key"): cv.string,
     }
 )
+
+RELOAD_SCHEMA = vol.Schema({vol.Optional(ATTR_ACCOUNT): cv.string})
+
+
+def _entries_to_reload(hass: HomeAssistant, account: str | None) -> list[ConfigEntry]:
+    """Return the receivers a reload applies to.
+
+    Config entries are read rather than running hubs, because the reason to
+    reload is often that a receiver is not running: its port was taken, or it
+    failed to set up. Those entries are exactly the ones missing from
+    ``hass.data``.
+    """
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if account is None:
+        return entries
+
+    wanted = normalise_account(account)
+    matching = [
+        entry
+        for entry in entries
+        if any(
+            normalise_account(str(item.get(ATTR_ACCOUNT, ""))) == wanted
+            for item in {**entry.data, **entry.options}.get(CONF_ACCOUNTS, [])
+        )
+    ]
+    if not matching:
+        raise ServiceValidationError(f"No configured SIA DC-09 account named {account}")
+    return matching
+
+
+async def _async_reload(call: ServiceCall) -> None:
+    """Restart the receivers, closing and reopening their sockets."""
+    for entry in _entries_to_reload(call.hass, call.data.get(ATTR_ACCOUNT)):
+        _LOGGER.info("Reloading SIA DC-09 receiver %s", entry.title)
+        await call.hass.config_entries.async_reload(entry.entry_id)
 
 
 def _hubs(hass: HomeAssistant) -> list[Any]:
@@ -243,6 +281,22 @@ async def _async_decode_message(call: ServiceCall) -> ServiceResponse:
             for event in payload.events
         ],
     }
+
+
+@callback
+def async_setup_reload_service(hass: HomeAssistant) -> None:
+    """Register the reload service, which outlives any single entry.
+
+    It is registered when the component loads rather than when an entry does,
+    so it is still there to rescue a receiver whose setup failed, which is the
+    case where reloading matters most.
+    """
+    if hass.services.has_service(DOMAIN, SERVICE_RELOAD):
+        return
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_RELOAD, _async_reload, schema=RELOAD_SCHEMA
+    )
 
 
 @callback
