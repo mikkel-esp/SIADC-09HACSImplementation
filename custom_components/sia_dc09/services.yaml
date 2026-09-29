@@ -82,3 +82,11 @@ decode_message:
       required: false
       selector:
         text:
+
+reload:
+  fields:
+    account:
+      required: false
+      example: "1234"
+      selector:
+        text:

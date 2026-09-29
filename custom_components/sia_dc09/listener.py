@@ -180,10 +180,20 @@ class Dc09DatagramProtocol(asyncio.DatagramProtocol):
         self.port = port
         self._transport: asyncio.DatagramTransport | None = None
         self._tasks: set[asyncio.Task[None]] = set()
+        #: Resolved once the socket is genuinely closed. ``transport.close()``
+        #: only schedules the close, so a reload that rebinds straight away
+        #: would otherwise race its own old socket and fail to bind.
+        self.closed: asyncio.Future[None] = asyncio.get_running_loop().create_future()
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """Remember the transport so replies can be sent."""
         self._transport = transport  # type: ignore[assignment]
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        """Report that the socket has let go of its port."""
+        self._transport = None
+        if not self.closed.done():
+            self.closed.set_result(None)
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         """Handle one datagram. UDP guarantees one message per datagram."""
@@ -220,6 +230,7 @@ class Dc09Receiver:
         self.udp_port: int | None = None
         self.tcp_port: int | None = None
         self._udp_transport: asyncio.DatagramTransport | None = None
+        self._udp_protocol: Dc09DatagramProtocol | None = None
         self._tcp_server: asyncio.Server | None = None
         self._connections: set[asyncio.Task[None]] = set()
 
@@ -242,6 +253,7 @@ class Dc09Receiver:
                     local_addr=(self.config.bind_host, self.config.udp_port),
                 )
                 self._udp_transport = transport
+                self._udp_protocol = protocol
                 self.udp_port = int(transport.get_extra_info("sockname")[1])
                 protocol.port = self.udp_port
                 _LOGGER.debug(
@@ -267,10 +279,21 @@ class Dc09Receiver:
             raise
 
     async def async_stop(self) -> None:
-        """Close the listeners and drop any open panel connections."""
+        """Close the listeners and drop any open panel connections.
+
+        Every socket is waited on until it has actually let go of its port.
+        Reloading the entry rebinds immediately afterwards, so returning early
+        would make the receiver fail to restart whenever a user added an
+        account or changed a setting.
+        """
         if self._udp_transport is not None:
+            protocol = self._udp_protocol
             self._udp_transport.close()
             self._udp_transport = None
+            self._udp_protocol = None
+            if protocol is not None:
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(asyncio.shield(protocol.closed), timeout=5)
 
         if self._tcp_server is not None:
             self._tcp_server.close()

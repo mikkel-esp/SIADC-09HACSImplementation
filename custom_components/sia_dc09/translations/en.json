@@ -58,10 +58,8 @@
       "invalid_account": "Account numbers must be 3 to 16 hexadecimal characters.",
       "duplicate_account": "That account number is already configured.",
       "invalid_key": "The key must be 32, 48 or 64 hexadecimal characters.",
-      "invalid_users": "Each line must read number: name, for example 501: Mikkel, and a user number cannot appear twice."
-    },
-    "abort": {
-      "already_configured": "A receiver is already listening on those ports."
+      "invalid_users": "Each line must read number: name, for example 501: Mikkel, and a user number cannot appear twice.",
+      "port_in_use": "Another SIA DC-09 receiver is already listening on that port."
     }
   },
   "options": {
@@ -131,7 +129,8 @@
       "invalid_account": "Account numbers must be 3 to 16 hexadecimal characters.",
       "duplicate_account": "That account number is already configured.",
       "invalid_key": "The key must be 32, 48 or 64 hexadecimal characters.",
-      "invalid_users": "Each line must read number: name, for example 501: Mikkel, and a user number cannot appear twice."
+      "invalid_users": "Each line must read number: name, for example 501: Mikkel, and a user number cannot appear twice.",
+      "port_in_use": "Another SIA DC-09 receiver is already listening on that port."
     },
     "abort": {
       "no_accounts": "There are no accounts configured yet."
@@ -284,6 +283,16 @@
         "key": {
           "name": "Key",
           "description": "Optional AES key to decrypt the message with."
+        }
+      }
+    },
+    "reload": {
+      "name": "Reload",
+      "description": "Restarts the receivers, closing and reopening their ports. Useful after freeing a port another program was holding.",
+      "fields": {
+        "account": {
+          "name": "Account",
+          "description": "Reload only the receiver that monitors this account number."
         }
       }
     }
