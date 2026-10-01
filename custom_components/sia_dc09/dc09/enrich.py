@@ -19,6 +19,10 @@ from .sia_codes import category_for, lookup_sia_code, severity_for
 #: worse than naming nothing.
 USER_ADDRESS_MEANING = "user number"
 
+#: Address meanings that identify a field as carrying a zone or point number.
+#: ``Zone or user number`` is excluded for the same reason as above.
+ZONE_ADDRESS_MEANINGS = frozenset({"zone or point", "zone number", "point number"})
+
 
 def normalise_user_number(number: str) -> str:
     """Return a user number in the form used to look names up.
@@ -108,24 +112,42 @@ def user_number_of(enriched: EnrichedEvent) -> str | None:
     return None
 
 
+def zone_number_of(enriched: EnrichedEvent) -> str | None:
+    """Return the zone or point number an event refers to, or ``None``.
+
+    Only an address field that is defined to carry a zone or point counts, so
+    a user number is never mistaken for a zone.
+    """
+    event = enriched.event
+    meaning = (enriched.address_meaning or "").lower()
+    if event.address and meaning in ZONE_ADDRESS_MEANINGS:
+        return normalise_user_number(event.address)
+    return None
+
+
 def summarise_with_user_names(
-    message: EnrichedMessage, user_names: Mapping[str, str] | None
+    message: EnrichedMessage,
+    user_names: Mapping[str, str] | None,
+    zone_names: Mapping[str, str] | None = None,
 ) -> str:
-    """Re-render a summary with configured user names substituted in.
+    """Re-render a summary with configured user and zone names substituted in.
 
     Naming is a Home Assistant concern, not a protocol one, so the summary is
     built without names when the message is decoded and rewritten here once the
     account it belongs to is known.
     """
-    if not user_names or not message.events:
+    if (not user_names and not zone_names) or not message.events:
         return message.summary
-    return "; ".join(_event_phrase(event, user_names) for event in message.events)
+    return "; ".join(
+        _event_phrase(event, user_names, zone_names) for event in message.events
+    )
 
 
 def _address_label(
     meaning: str | None,
     address: str | None,
     user_names: Mapping[str, str] | None = None,
+    zone_names: Mapping[str, str] | None = None,
 ) -> str | None:
     if not address:
         return None
@@ -136,15 +158,23 @@ def _address_label(
         name := (user_names or {}).get(number)
     ):
         return f"User {name}"
+    if meaning.lower() in ZONE_ADDRESS_MEANINGS and (
+        name := (zone_names or {}).get(number)
+    ):
+        return name
     return f"{meaning} {number}"
 
 
 def _event_phrase(
-    enriched: EnrichedEvent, user_names: Mapping[str, str] | None = None
+    enriched: EnrichedEvent,
+    user_names: Mapping[str, str] | None = None,
+    zone_names: Mapping[str, str] | None = None,
 ) -> str:
     """Render one event as the clause that appears in a summary."""
     name = enriched.title or f"Unknown code {enriched.code}"
-    label = _address_label(enriched.address_meaning, enriched.event.address, user_names)
+    label = _address_label(
+        enriched.address_meaning, enriched.event.address, user_names, zone_names
+    )
     where = f" - {label}" if label else ""
     area = f" (area {enriched.event.area})" if enriched.event.area else ""
     text = f' "{enriched.event.text}"' if enriched.event.text else ""

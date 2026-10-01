@@ -133,6 +133,35 @@ async def test_flow_rejects_unparsable_users(hass: HomeAssistant) -> None:
     assert result["errors"] == {"users": "invalid_users"}
 
 
+async def test_flow_accepts_zone_names(hass: HomeAssistant) -> None:
+    """Zone numbers typed one per line become a number to name mapping."""
+    result = await _start(hass, {CONF_UDP_PORT: 10191, CONF_TCP_PORT: 10191})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**ACCOUNT, "zones": "010: Office Window Sensor\n11 = Hall"},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"add_another": False}
+    )
+    await hass.async_block_till_done()
+
+    assert result["data"][CONF_ACCOUNTS][0]["zones"] == {
+        "10": "Office Window Sensor",
+        "11": "Hall",
+    }
+
+
+async def test_flow_rejects_unparsable_zones(hass: HomeAssistant) -> None:
+    """A malformed zone line is reported against the zones field."""
+    result = await _start(hass, {CONF_UDP_PORT: 10192, CONF_TCP_PORT: 10192})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**ACCOUNT, "zones": "10: Office\n10: Hall"}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"zones": "invalid_zones"}
+
+
 async def test_flow_rejects_duplicate_user_numbers(hass: HomeAssistant) -> None:
     """The same number twice is a typo, not an instruction to overwrite."""
     result = await _start(hass, {CONF_UDP_PORT: 10105, CONF_TCP_PORT: 10105})

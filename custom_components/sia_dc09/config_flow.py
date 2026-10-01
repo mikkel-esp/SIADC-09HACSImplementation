@@ -36,6 +36,7 @@ from .const import (
     CONF_UDP_PORT,
     CONF_UNKNOWN_ACCOUNT_POLICY,
     CONF_USERS,
+    CONF_ZONES,
     DEFAULT_BIND_HOST,
     DEFAULT_HEARTBEAT_TIMEOUT,
     DEFAULT_IGNORE_TIMESTAMPS,
@@ -55,6 +56,7 @@ from .utils import (
     is_valid_key,
     normalise_account,
     parse_users,
+    parse_zones,
 )
 
 ARM_TARGET_SELECTOR = selector.EntitySelector(
@@ -63,8 +65,9 @@ ARM_TARGET_SELECTOR = selector.EntitySelector(
     )
 )
 
-#: Panels report who armed or disarmed as a bare number, so the list of users
-#: is free text: one ``number = name`` pair per line.
+#: Panels report who armed or disarmed, and which zone tripped, as bare
+#: numbers, so the user and zone lists are free text: one ``number = name``
+#: pair per line.
 USER_LIST_SELECTOR = selector.TextSelector(selector.TextSelectorConfig(multiline=True))
 
 
@@ -153,6 +156,9 @@ def account_schema(
         ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10080)),
         vol.Optional(
             CONF_USERS, default=_users_text(defaults.get(CONF_USERS))
+        ): USER_LIST_SELECTOR,
+        vol.Optional(
+            CONF_ZONES, default=_users_text(defaults.get(CONF_ZONES))
         ): USER_LIST_SELECTOR,
     }
     if editing:
@@ -280,6 +286,10 @@ def validate_account(
     if isinstance(users, str) and parse_users(users)[1]:
         errors[CONF_USERS] = "invalid_users"
 
+    zones = data.get(CONF_ZONES)
+    if isinstance(zones, str) and parse_zones(zones)[1]:
+        errors[CONF_ZONES] = "invalid_zones"
+
     return errors
 
 
@@ -322,6 +332,8 @@ def clean_account(
         cleaned[CONF_ENCRYPTION_KEY] = key
     if users := parse_users(_users_text(data.get(CONF_USERS)))[0]:
         cleaned[CONF_USERS] = users
+    if zones := parse_zones(_users_text(data.get(CONF_ZONES)))[0]:
+        cleaned[CONF_ZONES] = zones
     for target in TARGET_KEYS:
         if value := (data.get(target) or "").strip():
             cleaned[target] = value

@@ -203,6 +203,10 @@ class AccountState:
     last_message_at: datetime | None = None
     last_activity_at: datetime | None = None
     last_code: str | None = None
+    #: User number of the message that last changed the status, if it named one.
+    changed_by_user: str | None = None
+    #: Zone or point number of the message that last changed the status.
+    changed_by_zone: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -360,6 +364,8 @@ def restore_state(
     last_message_at: datetime | None = None,
     last_activity_at: datetime | None = None,
     last_code: str | None = None,
+    changed_by_user: str | None = None,
+    changed_by_zone: str | None = None,
 ) -> AccountState:
     """Rebuild an account's state from the statuses its messages produced.
 
@@ -397,6 +403,8 @@ def restore_state(
         last_message_at=last_message_at,
         last_activity_at=last_activity_at,
         last_code=last_code,
+        changed_by_user=changed_by_user,
+        changed_by_zone=changed_by_zone,
     )
 
 

@@ -85,12 +85,14 @@ class SiaDc09StatusSensor(SiaDc09Entity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose the state the account would return to after a restore."""
+        """Expose the restore target and what last changed the status."""
         state = self.hub.states.get(self.account.account)
         return {
             **super().extra_state_attributes,
             "previous_status": state.previous.value if state else None,
             "last_code": state.last_code if state else None,
+            "changed_by": self.hub.changed_by(self.account.account),
+            "changed_by_zoneorpoint": self.hub.changed_by_zone(self.account.account),
         }
 
     def handle_event(self, event: SiaDc09Event) -> bool:
@@ -193,6 +195,8 @@ class SiaDc09ActivitySensor(SiaDc09Entity, SensorEntity):
                 "user": event.user,
                 "user_number": event.user_number,
                 "user_name": event.user_name,
+                "zone_number": event.zone_number,
+                "zone_name": event.zone_name,
                 "status_after": event.status_after,
             }
         )

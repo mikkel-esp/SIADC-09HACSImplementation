@@ -105,6 +105,11 @@ class SiaDc09AlarmControlPanel(SiaDc09Entity, AlarmControlPanelEntity):
         return AlarmControlPanelState(value) if value else None
 
     @property
+    def changed_by(self) -> str | None:
+        """Return who last changed the status, by name when one is configured."""
+        return self.hub.changed_by(self.account.account)
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the finer grained status alongside the panel state."""
         status = self.hub.status_of(self.account.account)
@@ -113,6 +118,7 @@ class SiaDc09AlarmControlPanel(SiaDc09Entity, AlarmControlPanelEntity):
             **super().extra_state_attributes,
             "sia_status": status.value,
             "last_code": state.last_code if state else None,
+            "changed_by_zoneorpoint": self.hub.changed_by_zone(self.account.account),
         }
         if status is SiaStatus.PANIC:
             attributes["panic"] = True

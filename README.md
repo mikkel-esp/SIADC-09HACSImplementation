@@ -51,8 +51,8 @@ SIA DC-09 → Configure**, which offers:
 
 - **Receiver settings** — ports, bind address, responses, retention.
 - **Add an account** — another panel.
-- **Edit an account** — pick an account, then change its name, key, user names
-  or arming targets. Everything is prefilled with what is stored now.
+- **Edit an account** — pick an account, then change its name, key, user and
+  zone names or arming targets. Everything is prefilled with what is stored now.
 - **Remove accounts**.
 
 Saving reloads the receiver, which takes a second or two and does not lose
@@ -108,6 +108,7 @@ you have not configured:
 | Encryption key | Optional. 32, 48 or 64 hexadecimal characters (128, 192 or 256 bit). |
 | Heartbeat timeout | Minutes of silence before the account is marked offline. Default 90. |
 | Users | Optional. One `number: name` per line. See *User names*, below. |
+| Zones and points | Optional. One `number: name` per line. See *Zone names*, below. |
 | Ignore message timestamps | On by default. Turn it off only if the panel's clock is reliably synchronised; otherwise its messages will be rejected as replays. |
 | Arm/disarm targets | Optional. See *Arming*, below. |
 
@@ -141,6 +142,28 @@ Only fields the protocol identifies as a user number are renamed. A zone number
 that happens to be 501 stays a zone, and codes where the protocol cannot say
 whether a number is a zone or a user are left alone — renaming the wrong thing
 is worse than renaming nothing.
+
+### Zone names
+
+Zones and points work the same way. Panels report which detector went off by
+number, so an alarm reads `Burglary Alarm - Zone or point 10 (area 1)`. Name
+them, one per line, in the account's **Zones and points** box:
+
+```
+10: Office Window Sensor
+11: Hall PIR
+```
+
+The same rules apply — `:` or `=`, leading zeros ignored, no duplicates — and
+the alarm then reads:
+
+```
+Burglary Alarm - Office Window Sensor (area 1)
+```
+
+The bus event carries `zone_number` and `zone_name`, and the original `zone`
+field is left untouched. Only fields the protocol defines as a zone or point
+are renamed, so a user number is never mistaken for a zone.
 
 ## Entities
 
@@ -194,7 +217,26 @@ overnight reads as armed again rather than unknown.
 Only the statuses this integration already recorded are replayed, so a restart
 cannot invent a state the panel never reported. An account that has never sent
 anything stays `unknown`, and reloading the entry after a settings change keeps
-whatever is already known instead of re-reading the database.
+whatever is already known instead of re-reading the database. Who and what made
+the last change (see *Who changed it*) is restored the same way.
+
+#### Who changed it
+
+Every status change records which user and which zone or point caused it, taken
+from the message that made the change:
+
+| Attribute | On | Value |
+| --- | --- | --- |
+| `changed_by` | the alarm panel and `sensor.<name>_status` | The user's configured name, or their number if unnamed. |
+| `changed_by_zoneorpoint` | the alarm panel and `sensor.<name>_status` | The zone's configured name, or its number if unnamed. |
+
+Both are replaced on every change, and cleared when the change did not name a
+user or a zone: a burglary alarm from zone 10 sets `changed_by_zoneorpoint` and
+clears `changed_by`, so the alarm is never credited to whoever armed the system
+earlier. Messages that do not change the status, such as automatic tests or a
+repeated closing, leave both alone. `sia_dc09.set_status` clears both, since a
+manual override was not made at the panel. Names are looked up when shown, so
+renaming a user or zone takes effect straight away.
 
 ### Arming
 
@@ -248,6 +290,8 @@ automation:
 | `user_number` | `"501"` | The user the event refers to, when there is one. |
 | `user_name` | `"Mikkel"` | The name configured for that number, if any. |
 | `zone` | `"001"` | The point or zone the code refers to. |
+| `zone_number` | `"1"` | The zone or point, when the code's address is defined to be one. |
+| `zone_name` | `"Office Window Sensor"` | The name configured for that number, if any. |
 | `partition` | `null` | Area, where the panel reports one. |
 | `event_qualifier` | `"N"` | SIA modifier, or the Contact ID qualifier. |
 | `timestamp` | `null` | The panel's own timestamp, when present. |
@@ -379,7 +423,8 @@ being explicit about what it can and cannot protect against.
   panel, but it is not dispatched to entities or fired on the event bus.
   Otherwise a forged code could trip the smoke or power sensors.
 - **Keys stay out of diagnostics and logs.** Diagnostics report only whether an
-  account is encrypted.
+  account is encrypted. The configured user and zone lists are reduced to their
+  numbers, though event summaries in the recent activity still read as shown.
 
 ### What the protocol cannot protect against
 
