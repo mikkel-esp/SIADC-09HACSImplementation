@@ -208,7 +208,14 @@ async def _async_set_status(call: ServiceCall) -> None:
     hub = _hub_for_account(call.hass, account)
 
     current = hub.states[account]
-    hub.states[account] = replace(current, status=status, previous=current.status)
+    # A manual override was not made by any panel user or zone.
+    hub.states[account] = replace(
+        current,
+        status=status,
+        previous=current.status,
+        changed_by_user=None,
+        changed_by_zone=None,
+    )
     async_dispatcher_send(call.hass, SIA_DC09_HUB_UPDATED.format(hub.entry.entry_id))
 
 

@@ -176,6 +176,11 @@ def _parse(value: Any) -> datetime | None:
     return dt_util.as_utc(parsed) if parsed is not None else None
 
 
+def _text(value: Any) -> str | None:
+    """Return a stored value as text, or ``None`` if it is missing."""
+    return str(value) if value not in (None, "") else None
+
+
 @dataclass(slots=True)
 class AccountHistory:
     """What an account's stored messages say about it.
@@ -189,6 +194,9 @@ class AccountHistory:
     last_activity_at: datetime | None = None
     statuses: list[str] = field(default_factory=list)
     last_code: str | None = None
+    #: User and zone numbers of the last message that changed the status.
+    changed_by_user: str | None = None
+    changed_by_zone: str | None = None
 
 
 class ActivityStore:
@@ -378,12 +386,29 @@ class ActivityStore:
                 (self.entry_id, account, max(1, min(limit, 1000))),
             ).fetchall()
 
+            change = conn.execute(
+                "SELECT extra FROM events "
+                "WHERE entry_id = ? AND account = ? AND status_after IS NOT NULL "
+                "AND (status_before IS NULL OR status_before != status_after) "
+                "ORDER BY received_at DESC, id DESC LIMIT 1",
+                (self.entry_id, account),
+            ).fetchone()
+
+        extra: dict[str, Any] = {}
+        if change is not None and change["extra"]:
+            with suppress(ValueError, TypeError):
+                loaded = json.loads(change["extra"])
+                if isinstance(loaded, dict):
+                    extra = loaded
+
         return AccountHistory(
             last_message_at=_parse(seen["last_message"] if seen else None),
             last_activity_at=_parse(seen["last_activity"] if seen else None),
             # Oldest first, so it can be replayed in the order it happened.
             statuses=[str(row["status_after"]) for row in reversed(rows)],
             last_code=str(rows[0]["code"]) if rows and rows[0]["code"] else None,
+            changed_by_user=_text(extra.get("user_number")),
+            changed_by_zone=_text(extra.get("zone_number")),
         )
 
     async def async_count(self, account: str | None = None) -> int:

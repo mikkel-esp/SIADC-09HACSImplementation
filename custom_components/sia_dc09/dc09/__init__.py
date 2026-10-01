@@ -34,6 +34,7 @@ from .enrich import (
     normalise_user_number,
     summarise_with_user_names,
     user_number_of,
+    zone_number_of,
 )
 from .frame import Dc09Header, Dc09ParseError, build_frame, parse_frame, peek_header
 from .models import (
@@ -130,6 +131,7 @@ __all__ = [
     "to_printable",
     "user_number_of",
     "wire_to_bytes",
+    "zone_number_of",
 ]
 
 

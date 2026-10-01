@@ -8,29 +8,48 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_ACCOUNTS, CONF_ENCRYPTION_KEY, CONF_USERS, DOMAIN
+from .const import CONF_ACCOUNTS, CONF_ENCRYPTION_KEY, CONF_USERS, CONF_ZONES, DOMAIN
 from .hub import SiaDc09Hub
 
-TO_REDACT = {CONF_ENCRYPTION_KEY, "remote_ip", "remote_ips"}
+TO_REDACT = {
+    CONF_ENCRYPTION_KEY,
+    "remote_ip",
+    "remote_ips",
+    "user_name",
+    "zone_name",
+}
+
+#: Per-account mappings whose names are dropped and whose numbers are kept.
+NAMED_LISTS = (CONF_USERS, CONF_ZONES)
 
 
 def _redact_entry(data: dict[str, Any]) -> dict[str, Any]:
-    """Return the entry configuration without its secrets or people's names.
+    """Return the entry configuration without its secrets or names.
 
-    User names are the one piece of configuration that identifies real people,
-    and diagnostics get pasted into public issues. The numbers are kept because
-    "is this number even configured" is the question diagnostics are for.
+    User names identify real people and zone names describe the layout of a
+    home, and diagnostics get pasted into public issues. The numbers are kept
+    because "is this number even configured" is the question diagnostics are
+    for.
     """
     redacted = async_redact_data(data, {CONF_ENCRYPTION_KEY})
     accounts = redacted.get(CONF_ACCOUNTS)
     if isinstance(accounts, list):
-        redacted[CONF_ACCOUNTS] = [
-            {**account, CONF_USERS: sorted(account[CONF_USERS])}
-            if isinstance(account, dict) and isinstance(account.get(CONF_USERS), dict)
-            else account
-            for account in accounts
-        ]
+        redacted[CONF_ACCOUNTS] = [_redact_account(account) for account in accounts]
     return redacted
+
+
+def _redact_account(account: Any) -> Any:
+    """Replace an account's user and zone mappings with their numbers."""
+    if not isinstance(account, dict):
+        return account
+    return {
+        **account,
+        **{
+            key: sorted(account[key])
+            for key in NAMED_LISTS
+            if isinstance(account.get(key), dict)
+        },
+    }
 
 
 async def async_get_config_entry_diagnostics(
@@ -59,6 +78,7 @@ async def async_get_config_entry_diagnostics(
                 "heartbeat_timeout": account.heartbeat_timeout,
                 "ignore_timestamps": account.ignore_timestamps,
                 "named_users": len(account.users),
+                "named_zones": len(account.zones),
                 "status": hub.status_of(account.account).value,
                 "online": hub.is_online(account.account),
                 "last_message_at": (

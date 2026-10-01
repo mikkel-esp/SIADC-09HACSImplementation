@@ -220,6 +220,32 @@ async def test_diagnostics_hides_user_names_but_keeps_numbers(
     assert diagnostics["accounts"][0]["named_users"] == 1
 
 
+async def test_diagnostics_hides_zone_names_but_keeps_numbers(
+    hass: HomeAssistant,
+) -> None:
+    """Zone names describe the layout of a home, so they stay private too."""
+    entry = await make_entry(
+        hass,
+        accounts=[
+            {
+                "account": ACCOUNT,
+                "name": "Front door",
+                "zones": {"10": "Office Window Sensor"},
+            }
+        ],
+    )
+    await send_udp(hass, entry, body("BA10"))
+
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert "Office Window Sensor" not in str(diagnostics["entry"])
+    assert diagnostics["entry"]["accounts"][0]["zones"] == ["10"]
+    assert diagnostics["accounts"][0]["named_zones"] == 1
+    extra = diagnostics["recent_activity"][0]["extra"]
+    assert extra["zone_name"] == "**REDACTED**"
+    assert extra["zone_number"] == "10"
+
+
 async def test_diagnostics_reports_unknown_accounts(hass: HomeAssistant) -> None:
     """The messages a stranger sent are what makes the count worth having."""
     entry = await make_entry(hass)

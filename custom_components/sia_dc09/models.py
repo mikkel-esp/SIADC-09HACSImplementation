@@ -21,6 +21,7 @@ from .dc09 import (
     summarise_with_user_names,
     to_hex,
     user_number_of,
+    zone_number_of,
 )
 from .state_machine import SiaStatus, StatusTransition
 
@@ -57,6 +58,11 @@ class SiaDc09Event:
     user_number: str | None = None
     #: The configured name for :attr:`user_number`, if the account has one.
     user_name: str | None = None
+    #: The zone or point this event is about, when its address field is
+    #: defined to carry one.
+    zone_number: str | None = None
+    #: The configured name for :attr:`zone_number`, if the account has one.
+    zone_name: str | None = None
     partition: str | None = None
     event_qualifier: str | None = None
 
@@ -106,6 +112,8 @@ class SiaDc09Event:
             "summary": self.summary,
             "user_number": self.user_number,
             "user_name": self.user_name,
+            "zone_number": self.zone_number,
+            "zone_name": self.zone_name,
             "severity": self.severity,
             "category": self.category,
             "is_test": self.is_test,
@@ -145,6 +153,7 @@ def build_event(
     account: str,
     transition: StatusTransition | None = None,
     user_names: Mapping[str, str] | None = None,
+    zone_names: Mapping[str, str] | None = None,
 ) -> SiaDc09Event:
     """Turn a received message into the event entities and automations see.
 
@@ -154,6 +163,7 @@ def build_event(
 
     ``user_names`` maps user numbers to the names configured for the account,
     so "User number 501" reads as "User Mikkel" wherever the summary is shown.
+    ``zone_names`` does the same for zone and point numbers.
     """
     frame = message.decode.frame
     payload = message.decode.payload
@@ -174,6 +184,8 @@ def build_event(
 
     user_number = user_number_of(enriched_event) if enriched_event is not None else None
     user_name = user_names.get(user_number) if user_names and user_number else None
+    zone_number = zone_number_of(enriched_event) if enriched_event is not None else None
+    zone_name = zone_names.get(zone_number) if zone_names and zone_number else None
 
     return SiaDc09Event(
         account=account,
@@ -188,7 +200,7 @@ def build_event(
         code=event.code if event is not None else None,
         code_title=enriched_event.title if enriched_event is not None else None,
         message=event.text if event is not None else None,
-        summary=summarise_with_user_names(message.enriched, user_names)
+        summary=summarise_with_user_names(message.enriched, user_names, zone_names)
         if message.enriched is not None
         else "",
         severity=enriched_event.severity if enriched_event is not None else "info",
@@ -198,6 +210,8 @@ def build_event(
         user=event.user if event is not None else None,
         user_number=user_number,
         user_name=user_name,
+        zone_number=zone_number,
+        zone_name=zone_name,
         partition=event.partition if event is not None else None,
         event_qualifier=event.qualifier if event is not None else None,
         timestamp=frame.timestamp_utc if frame is not None else None,

@@ -105,6 +105,13 @@ def clean_users(value: Any) -> dict[str, str]:
     }
 
 
+#: Zone and point lists use exactly the same ``number: name`` format as user
+#: lists, so they share the parsing, rendering and cleaning rules.
+parse_zones = parse_users
+format_zones = format_users
+clean_zones = clean_users
+
+
 def device_identifier(entry_id: str, account: str) -> tuple[str, str]:
     """Return the device registry identifier for an account."""
     return (DOMAIN, f"{entry_id}_{normalise_account(account)}")
@@ -151,6 +158,10 @@ def _record_extra(event: SiaDc09Event) -> dict[str, Any] | None:
         extra["user_number"] = event.user_number
     if event.user_name:
         extra["user_name"] = event.user_name
+    if event.zone_number:
+        extra["zone_number"] = event.zone_number
+    if event.zone_name:
+        extra["zone_name"] = event.zone_name
     if event.partition:
         extra["partition"] = event.partition
     if event.sequence:

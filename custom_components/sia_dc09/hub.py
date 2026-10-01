@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -39,6 +39,7 @@ from .const import (
     CONF_UDP_PORT,
     CONF_UNKNOWN_ACCOUNT_POLICY,
     CONF_USERS,
+    CONF_ZONES,
     DEFAULT_BIND_HOST,
     DEFAULT_HEARTBEAT_TIMEOUT,
     DEFAULT_IGNORE_TIMESTAMPS,
@@ -70,7 +71,7 @@ from .state_machine import (
     restore_state,
 )
 from .store import ActivityStore
-from .utils import clean_users, event_to_record, normalise_account
+from .utils import clean_users, clean_zones, event_to_record, normalise_account
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,6 +94,8 @@ class AccountConfig:
     ignore_timestamps: bool = DEFAULT_IGNORE_TIMESTAMPS
     #: User numbers mapped to the names they should be shown as.
     users: dict[str, str] = field(default_factory=dict)
+    #: Zone and point numbers mapped to the names they should be shown as.
+    zones: dict[str, str] = field(default_factory=dict)
     mapping: StatusMapping = field(default_factory=StatusMapping.build)
 
     @classmethod
@@ -117,6 +120,7 @@ class AccountConfig:
                 False if key is not None else DEFAULT_IGNORE_TIMESTAMPS,
             ),
             users=clean_users(data.get(CONF_USERS)),
+            zones=clean_zones(data.get(CONF_ZONES)),
             mapping=StatusMapping.build(
                 data.get(CONF_STATUS_MAP_OVERRIDE),
                 data.get(CONF_TEST_CODES_OVERRIDE),
@@ -242,6 +246,8 @@ class SiaDc09Hub:
                 last_message_at=history.last_message_at,
                 last_activity_at=history.last_activity_at,
                 last_code=history.last_code,
+                changed_by_user=history.changed_by_user,
+                changed_by_zone=history.changed_by_zone,
             )
             _LOGGER.debug(
                 "Restored account %s as %s from stored activity",
@@ -316,7 +322,7 @@ class SiaDc09Hub:
             )
             if config is not None:
                 await self._async_record_only(
-                    build_event(message, account, None, config.users)
+                    build_event(message, account, None, config.users, config.zones)
                 )
             return
 
@@ -349,9 +355,19 @@ class SiaDc09Hub:
             config.mapping,
             message.received_at,
         )
-        self.states[account] = transition.state
+        event = build_event(message, account, transition, config.users, config.zones)
+        state = transition.state
+        if transition.changed:
+            # Who and what caused a change is replaced on every change, even
+            # with nothing, so an alarm from a zone is never credited to the
+            # user who armed the system earlier.
+            state = replace(
+                state,
+                changed_by_user=event.user_number,
+                changed_by_zone=event.zone_number,
+            )
+        self.states[account] = state
 
-        event = build_event(message, account, transition, config.users)
         await self._async_publish(event)
 
     # --- publishing ----------------------------------------------------------
@@ -519,6 +535,34 @@ class SiaDc09Hub:
             return None
         deadline = state.last_message_at + timedelta(minutes=config.heartbeat_timeout)
         return dt_util.utcnow() <= deadline
+
+    def changed_by(self, account: str) -> str | None:
+        """Return who last changed an account's status.
+
+        That is the configured name for the user number when there is one, and
+        the bare number otherwise. Names are looked up here rather than when
+        the message arrives, so renaming a user shows immediately.
+        """
+        account = normalise_account(account)
+        state = self.states.get(account)
+        config = self.accounts.get(account)
+        if state is None or state.changed_by_user is None:
+            return None
+        names = config.users if config is not None else {}
+        return names.get(state.changed_by_user, state.changed_by_user)
+
+    def changed_by_zone(self, account: str) -> str | None:
+        """Return the zone or point that last changed an account's status.
+
+        The configured name when there is one, the bare number otherwise.
+        """
+        account = normalise_account(account)
+        state = self.states.get(account)
+        config = self.accounts.get(account)
+        if state is None or state.changed_by_zone is None:
+            return None
+        names = config.zones if config is not None else {}
+        return names.get(state.changed_by_zone, state.changed_by_zone)
 
     @property
     def udp_port(self) -> int | None:
