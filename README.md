@@ -186,15 +186,19 @@ Each account becomes one device carrying:
 | --- | --- |
 | `alarm_control_panel.<name>` | The standard panel states. |
 | `sensor.<name>_status` | The full status including `panic`. |
-| `sensor.<name>_last_heartbeat` | When anything was last received, including automatic tests. |
 | `sensor.<name>_last_activity` | The last non-test event, with recent events as attributes. |
-| `binary_sensor.<name>_connectivity` | Whether the account reported inside its heartbeat window. |
+| `binary_sensor.<name>_connectivity` | Whether the account reported inside its heartbeat window. The `last_heartbeat` attribute holds when anything was last received, automatic tests included. |
 | `binary_sensor.<name>_smoke` | Fire, gas, heat and sprinkler codes. |
 | `binary_sensor.<name>_moisture` | Water and freeze codes. |
 | `binary_sensor.<name>_power` | Mains power, from AC trouble and restore. |
 | `binary_sensor.<name>_battery` | System and transmitter battery trouble. |
 
 The receiver itself gets a *Messages received* and an *Unknown accounts* sensor.
+
+The heartbeat is an attribute rather than a sensor of its own, so it does not
+add an entry to the device's activity log on every message. Use it in a
+template with `{{ state_attr('binary_sensor.<name>_connectivity', 'last_heartbeat') }}`.
+An older `sensor.<name>_last_heartbeat` is removed automatically on upgrade.
 
 ### Status
 

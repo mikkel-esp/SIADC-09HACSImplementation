@@ -12,7 +12,8 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import EntityCategory
@@ -44,13 +45,13 @@ async def async_setup_entry(
     """Create the sensors for every configured account, plus hub diagnostics."""
     hub: SiaDc09Hub = hass.data[DOMAIN][entry.entry_id]
     recent = hub.options.get(CONF_RECENT_EVENTS, DEFAULT_RECENT_EVENTS)
+    _async_remove_heartbeat_sensors(hass, entry)
 
     entities: list[SensorEntity] = []
     for account in hub.accounts.values():
         entities.extend(
             [
                 SiaDc09StatusSensor(hub, account),
-                SiaDc09HeartbeatSensor(hub, account),
                 SiaDc09ActivitySensor(hub, account, recent),
             ]
         )
@@ -58,6 +59,21 @@ async def async_setup_entry(
     entities.append(SiaDc09MessageCountSensor(hub))
     entities.append(SiaDc09UnknownAccountsSensor(hub))
     async_add_entities(entities)
+
+
+@callback
+def _async_remove_heartbeat_sensors(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Drop the retired per-account heartbeat sensors.
+
+    Their state changed on every message, so each heartbeat landed in the
+    device's activity log and buried the events that matter. The time now lives
+    in the ``last_heartbeat`` attribute of the connectivity sensor instead.
+    """
+    registry = er.async_get(hass)
+    suffix = f"_{KEY_LAST_HEARTBEAT}"
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if entity.domain == "sensor" and entity.unique_id.endswith(suffix):
+            registry.async_remove(entity.entity_id)
 
 
 class SiaDc09StatusSensor(SiaDc09Entity, SensorEntity):
@@ -98,50 +114,6 @@ class SiaDc09StatusSensor(SiaDc09Entity, SensorEntity):
     def handle_event(self, event: SiaDc09Event) -> bool:
         """Only a status change is worth writing."""
         return event.status_changed
-
-
-class SiaDc09HeartbeatSensor(SiaDc09Entity, SensorEntity):
-    """When the account last said anything at all.
-
-    Deliberately driven by every message, automatic tests included: the point
-    of a heartbeat is to prove the link is alive, and a test message proves
-    exactly that.
-    """
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(self, hub: SiaDc09Hub, account: AccountConfig):
-        """Build the heartbeat sensor for one account."""
-        super().__init__(hub, account, KEY_LAST_HEARTBEAT)
-
-    @property
-    def native_value(self) -> datetime | None:
-        """Return the time of the most recent message."""
-        state = self.hub.states.get(self.account.account)
-        return state.last_message_at if state else None
-
-    @property
-    def available(self) -> bool:
-        """Stay available even when the link is stale.
-
-        A heartbeat sensor that goes unavailable when the panel goes quiet
-        hides the very information the user needs.
-        """
-        return True
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose how the heartbeat is being judged."""
-        return {
-            **super().extra_state_attributes,
-            "timeout_minutes": self.account.heartbeat_timeout,
-            "online": self.hub.is_online(self.account.account),
-        }
-
-    def handle_event(self, event: SiaDc09Event) -> bool:
-        """Every message is a heartbeat."""
-        return True
 
 
 class SiaDc09ActivitySensor(SiaDc09Entity, SensorEntity):

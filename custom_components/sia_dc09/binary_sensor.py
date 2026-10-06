@@ -7,6 +7,7 @@ so the same panel messages produce the same sensor behaviour.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -137,6 +138,22 @@ class SiaDc09ConnectivitySensor(SiaDc09Entity, BinarySensorEntity):
     def available(self) -> bool:
         """Stay available so the user can see the link is down."""
         return True
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose when the account was last heard from.
+
+        An attribute rather than a sensor of its own: a timestamp state changes
+        on every message, and each change would flood the device's activity
+        log. Attribute updates do not appear there.
+        """
+        state = self.hub.states.get(self.account.account)
+        last = state.last_message_at if state else None
+        return {
+            **super().extra_state_attributes,
+            "last_heartbeat": last.isoformat() if last else None,
+            "timeout_minutes": self.account.heartbeat_timeout,
+        }
 
     def handle_event(self, event: SiaDc09Event) -> bool:
         """Any message proves the link works, tests included."""
