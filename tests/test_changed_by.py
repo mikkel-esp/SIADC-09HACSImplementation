@@ -86,10 +86,22 @@ def test_summary_names_the_zone() -> None:
     assert summary == "Burglary Alarm - Office Window Sensor (area 1)"
 
 
-def test_zone_names_never_rename_users() -> None:
-    """A user number that matches a zone number keeps its user meaning."""
+def test_user_name_falls_back_to_zone_names() -> None:
+    """A device reported as a user can use its zone/point name."""
     summary = summarise_with_user_names(enriched("CL10"), None, {"10": "Office"})
-    assert summary == "Closing Report - User number 10 (area 1)"
+    assert summary == "Closing Report - User Office (area 1)"
+
+
+def test_user_name_takes_precedence() -> None:
+    summary = summarise_with_user_names(
+        enriched("OP010"), {"10": "Mikkel"}, {"10": "Office"}
+    )
+    assert summary == "Opening Report - User Mikkel (area 1)"
+
+
+def test_zone_name_does_not_fall_back_to_users() -> None:
+    summary = summarise_with_user_names(enriched("BA10"), {"10": "Mikkel"})
+    assert summary == "Burglary Alarm - Zone or point 10 (area 1)"
 
 
 def test_zone_list_parses_like_the_user_list() -> None:
@@ -144,6 +156,35 @@ async def test_changed_by_falls_back_to_the_number(hass: HomeAssistant) -> None:
     # The alarm came from a zone, not from the user who armed earlier.
     assert status.attributes["changed_by"] is None
     assert hass.states.get(PANEL).attributes["changed_by"] is None
+
+
+@pytest.mark.parametrize("code", ["CL010", "OP010"])
+@pytest.mark.parametrize("user_name", [None, "Mikkel"])
+async def test_device_actor_name_lookup(
+    hass: HomeAssistant, code: str, user_name: str | None
+) -> None:
+    """User-first device naming is consistent across attributes and activity."""
+    users = {"10": user_name} if user_name else {}
+    entry = await make_entry(hass, accounts=named_account(**{CONF_USERS: users}))
+    expected = user_name or "Office Window Sensor"
+
+    await send_udp(hass, entry, body(code))
+
+    for entity_id in (PANEL, STATUS):
+        state = hass.states.get(entity_id)
+        assert state.attributes["changed_by"] == expected
+        assert state.attributes["changed_by_zoneorpoint"] is None
+    activity = hass.states.get("sensor.front_door_last_activity")
+    assert f"User {expected}" in activity.state
+    latest = activity.attributes["events"][0]
+    assert latest["user_number"] == "10"
+    assert latest["user_name"] == expected
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get(PANEL).attributes["changed_by"] == expected
 
 
 async def test_zone_that_triggers_is_named(hass: HomeAssistant) -> None:

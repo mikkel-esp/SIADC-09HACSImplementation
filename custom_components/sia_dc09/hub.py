@@ -60,6 +60,7 @@ from .const import (
     TIMEBAND_PAST,
 )
 from .dc09 import ReceivedMessage, parse_key
+from .dc09.enrich import resolve_user_name
 from .discovery import UnknownAccountLog
 from .listener import Dc09Receiver, ReceiverConfig
 from .models import SiaDc09Event, build_event
@@ -539,8 +540,8 @@ class SiaDc09Hub:
     def changed_by(self, account: str) -> str | None:
         """Return who last changed an account's status.
 
-        That is the configured name for the user number when there is one, and
-        the bare number otherwise. Names are looked up here rather than when
+        Users take precedence over zone/point names, then the bare number.
+        Names are looked up here rather than when
         the message arrives, so renaming a user shows immediately.
         """
         account = normalise_account(account)
@@ -548,8 +549,14 @@ class SiaDc09Hub:
         config = self.accounts.get(account)
         if state is None or state.changed_by_user is None:
             return None
-        names = config.users if config is not None else {}
-        return names.get(state.changed_by_user, state.changed_by_user)
+        return (
+            resolve_user_name(
+                state.changed_by_user,
+                config.users if config is not None else None,
+                config.zones if config is not None else None,
+            )
+            or state.changed_by_user
+        )
 
     def changed_by_zone(self, account: str) -> str | None:
         """Return the zone or point that last changed an account's status.
