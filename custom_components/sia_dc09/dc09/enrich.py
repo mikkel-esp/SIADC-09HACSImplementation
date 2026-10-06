@@ -33,6 +33,18 @@ def normalise_user_number(number: str) -> str:
     return number.strip().lstrip("0") or "0"
 
 
+def resolve_user_name(
+    number: str | None,
+    user_names: Mapping[str, str] | None,
+    zone_names: Mapping[str, str] | None = None,
+) -> str | None:
+    """Resolve an actor's name, preferring users over zone/point devices."""
+    if number is None:
+        return None
+    number = normalise_user_number(number)
+    return (user_names or {}).get(number) or (zone_names or {}).get(number)
+
+
 def enrich(result: DecodeResult) -> EnrichedMessage | None:
     """Produce the view of a message that an operator actually wants to read."""
     frame = result.frame
@@ -155,7 +167,7 @@ def _address_label(
         return None
     number = normalise_user_number(address)
     if meaning.lower() == USER_ADDRESS_MEANING and (
-        name := (user_names or {}).get(number)
+        name := resolve_user_name(number, user_names, zone_names)
     ):
         return f"User {name}"
     if meaning.lower() in ZONE_ADDRESS_MEANINGS and (

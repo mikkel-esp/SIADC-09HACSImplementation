@@ -23,6 +23,7 @@ from .dc09 import (
     user_number_of,
     zone_number_of,
 )
+from .dc09.enrich import resolve_user_name
 from .state_machine import SiaStatus, StatusTransition
 
 
@@ -183,7 +184,7 @@ def build_event(
         changed = transition.changed
 
     user_number = user_number_of(enriched_event) if enriched_event is not None else None
-    user_name = user_names.get(user_number) if user_names and user_number else None
+    user_name = resolve_user_name(user_number, user_names, zone_names)
     zone_number = zone_number_of(enriched_event) if enriched_event is not None else None
     zone_name = zone_names.get(zone_number) if zone_names and zone_number else None
 

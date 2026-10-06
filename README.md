@@ -138,7 +138,13 @@ recent-event attributes, the stored activity log, and the `user_name` field of
 the bus event. The raw `user_number` is kept alongside it, so automations can
 keep matching on the number.
 
-Only fields the protocol identifies as a user number are renamed. A zone number
+For a reported user number, names are looked up in **Users** first, then in
+**Zones and points** if no user name matches, then the number is shown. This
+allows a keypad or remote reported as a user to use its configured device name.
+The same lookup applies to summaries, activity entries, `user_name` in bus
+events, and `changed_by`.
+
+Only fields the protocol identifies as a user number use this fallback. A zone number
 that happens to be 501 stays a zone, and codes where the protocol cannot say
 whether a number is a zone or a user are left alone — renaming the wrong thing
 is worse than renaming nothing.
@@ -227,7 +233,7 @@ from the message that made the change:
 
 | Attribute | On | Value |
 | --- | --- | --- |
-| `changed_by` | the alarm panel and `sensor.<name>_status` | The user's configured name, or their number if unnamed. |
+| `changed_by` | the alarm panel and `sensor.<name>_status` | The name from Users first, then Zones and points, or the user number if unnamed. |
 | `changed_by_zoneorpoint` | the alarm panel and `sensor.<name>_status` | The zone's configured name, or its number if unnamed. |
 
 Both are replaced on every change, and cleared when the change did not name a
