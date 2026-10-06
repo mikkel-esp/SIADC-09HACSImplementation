@@ -1,6 +1,6 @@
 [project]
 name = "sia-dc09"
-version = "0.1.0"
+version = "0.5.0"
 description = "SIA DC-09 Control Center receiver for Home Assistant"
 requires-python = ">=3.12"
 

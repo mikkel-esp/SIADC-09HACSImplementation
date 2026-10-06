@@ -41,6 +41,13 @@ Everything is local. Nothing is sent anywhere, and no cloud account is needed.
 Copy `custom_components/sia_dc09` into your Home Assistant
 `config/custom_components` directory and restart.
 
+### Icon
+
+The integration ships its own icon in `custom_components/sia_dc09/brand/`.
+Home Assistant 2026.3 and later show it automatically; older versions show a
+placeholder. The HACS dashboard may still show a placeholder until HACS reads
+locally shipped icons.
+
 ## Configuration
 
 Everything is configured in the UI; there is no YAML.
