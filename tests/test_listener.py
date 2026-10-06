@@ -70,6 +70,42 @@ async def running_receiver(**overrides):
         await receiver.async_stop()
 
 
+async def test_restart_with_connected_tcp_panel() -> None:
+    """Stopping must close connected panels before waiting for the server."""
+    async with running_receiver(tcp_idle_timeout=3) as (receiver, collector):
+        udp_port = receiver.udp_port
+        tcp_port = receiver.tcp_port
+        reader, writer = await asyncio.open_connection("127.0.0.1", tcp_port)
+        try:
+            writer.write(build_frame(sia_body()))
+            await writer.drain()
+            await collector.wait()
+            await reader.readuntil(b"\r")
+
+            await asyncio.wait_for(receiver.async_stop(), timeout=2)
+            assert await asyncio.wait_for(reader.read(), timeout=2) == b""
+            assert not receiver.is_running
+            assert not receiver._connections
+
+            receiver.config.udp_port = udp_port
+            receiver.config.tcp_port = tcp_port
+            await receiver.async_start()
+            new_reader, new_writer = await asyncio.open_connection(
+                "127.0.0.1", tcp_port
+            )
+            try:
+                new_writer.write(build_frame(sia_body(sequence="0002")))
+                await new_writer.drain()
+                await collector.wait(count=2)
+                assert b'"ACK"' in await new_reader.readuntil(b"\r")
+            finally:
+                new_writer.close()
+                await new_writer.wait_closed()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+
 def udp_port_of(receiver: Dc09Receiver) -> int:
     """Return the port the UDP socket actually bound to."""
     assert receiver.udp_port is not None

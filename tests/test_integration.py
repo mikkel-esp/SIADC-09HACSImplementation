@@ -482,6 +482,48 @@ async def test_options_update_reloads(hass: HomeAssistant) -> None:
     assert hass.states.get("sensor.garage_status") is not None
 
 
+async def test_account_edit_reloads_with_connected_panel(
+    hass: HomeAssistant,
+) -> None:
+    """An account edit must finish reloading even with a persistent TCP panel."""
+    entry = await make_entry(hass)
+    old_hub = hub_of(hass, entry)
+    reader, writer = await asyncio.open_connection("127.0.0.1", old_hub.tcp_port)
+    try:
+        writer.write(build_frame(body("CL501")))
+        await writer.drain()
+        await asyncio.wait_for(reader.readuntil(b"\r"), timeout=5)
+        await hass.async_block_till_done()
+
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                CONF_UDP_PORT: old_hub.udp_port,
+                CONF_TCP_PORT: old_hub.tcp_port,
+                CONF_ACCOUNTS: [
+                    {
+                        CONF_ACCOUNT: ACCOUNT,
+                        "name": "Front door",
+                        "zones": {"10": "Keypad"},
+                    },
+                    {CONF_ACCOUNT: "5678", "name": "Garage"},
+                ],
+            },
+        )
+        await asyncio.wait_for(hass.async_block_till_done(), timeout=5)
+        assert await asyncio.wait_for(reader.read(), timeout=2) == b""
+        new_hub = hub_of(hass, entry)
+        assert new_hub is not old_hub
+        assert new_hub.accounts[ACCOUNT].zones == {"10": "Keypad"}
+        assert hass.states.get("sensor.garage_status") is not None
+        reply = await send_tcp(hass, entry, body("OP501", sequence="0002"))
+        assert b'"ACK"' in reply
+        assert hass.states.get("alarm_control_panel.front_door").state == "disarmed"
+    finally:
+        writer.close()
+        await writer.wait_closed()
+
+
 async def test_no_arming_targets_means_no_features(hass: HomeAssistant) -> None:
     """Without a target the panel advertises nothing it cannot do."""
     await make_entry(hass)

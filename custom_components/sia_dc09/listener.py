@@ -297,14 +297,18 @@ class Dc09Receiver:
 
         if self._tcp_server is not None:
             self._tcp_server.close()
-            await self._tcp_server.wait_closed()
-            self._tcp_server = None
 
         for task in list(self._connections):
             task.cancel()
         if self._connections:
             await asyncio.gather(*self._connections, return_exceptions=True)
         self._connections.clear()
+
+        # Python 3.12+ waits for client transports too, so disconnect panels
+        # before waiting for the listening server to finish closing.
+        if self._tcp_server is not None:
+            await self._tcp_server.wait_closed()
+            self._tcp_server = None
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter

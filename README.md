@@ -58,6 +58,13 @@ SIA DC-09 → Configure**, which offers:
 Saving reloads the receiver, which takes a second or two and does not lose
 stored activity.
 
+To restart only the receiver, use the integration entry's **three dot menu →
+Reload**, press **Reload integration** in the **Configuration** section of the
+receiver's device page, or run **Developer Tools → Actions → SIA DC-09: Reload**
+(`sia_dc09.reload`). Existing TCP panel connections are closed during a reload;
+panels must reconnect afterwards. A full Home Assistant restart is not needed
+for account edits.
+
 ### Removing things
 
 - **One account** — **Configure → Remove accounts**. Its device and entities go

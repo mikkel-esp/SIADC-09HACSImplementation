@@ -168,6 +168,11 @@
     }
   },
   "entity": {
+    "button": {
+      "reload": {
+        "name": "Reload integration"
+      }
+    },
     "alarm_control_panel": {
       "alarm": {
         "name": "Alarm"
