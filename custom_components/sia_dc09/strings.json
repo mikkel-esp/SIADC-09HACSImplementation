@@ -196,9 +196,6 @@
           "unknown": "Unknown"
         }
       },
-      "last_heartbeat": {
-        "name": "Last heartbeat"
-      },
       "last_activity": {
         "name": "Last activity"
       },

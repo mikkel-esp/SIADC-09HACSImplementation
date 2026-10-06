@@ -10,6 +10,7 @@ import pytest
 from homeassistant.components.alarm_control_panel import AlarmControlPanelEntityFeature
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -31,6 +32,7 @@ from custom_components.sia_dc09.const import (
     SIA_DC09_EVENT_ALL,
 )
 from custom_components.sia_dc09.dc09 import build_frame, encrypt_body, parse_key
+from custom_components.sia_dc09.utils import unique_id
 
 ACCOUNT = "1234"
 KEY_HEX = "ABCDABCDABCDABCDABCDABCDABCDABCD"
@@ -141,7 +143,7 @@ async def test_setup_creates_entities(hass: HomeAssistant) -> None:
 
     assert hass.states.get("alarm_control_panel.front_door") is not None
     assert hass.states.get("sensor.front_door_status") is not None
-    assert hass.states.get("sensor.front_door_last_heartbeat") is not None
+    assert hass.states.get("sensor.front_door_last_heartbeat") is None
     assert hass.states.get("sensor.front_door_last_activity") is not None
     assert hass.states.get("binary_sensor.front_door_connectivity") is not None
     assert hass.states.get("binary_sensor.front_door_smoke") is not None
@@ -222,11 +224,31 @@ async def test_heartbeat_updates_but_is_not_activity(hass: HomeAssistant) -> Non
 
     await send_udp(hass, entry, body("RP000"))
 
-    assert hass.states.get("sensor.front_door_last_heartbeat").state != STATE_UNKNOWN
+    connectivity = hass.states.get("binary_sensor.front_door_connectivity")
+    assert connectivity.attributes["last_heartbeat"] is not None
+    assert connectivity.attributes["timeout_minutes"] > 0
     stored = await hub.store.async_get_activity(limit=10, include_tests=False)
     assert stored == []
     # It is still recorded when tests are included.
     assert await hub.store.async_get_activity(limit=10, include_tests=True) != []
+
+
+async def test_retired_heartbeat_sensor_is_removed(hass: HomeAssistant) -> None:
+    """An upgrade drops the old heartbeat sensor from the entity registry."""
+    entry = await make_entry(hass)
+    registry = er.async_get(hass)
+    old = registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        unique_id(entry.entry_id, ACCOUNT, "last_heartbeat"),
+        config_entry=entry,
+    )
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert registry.async_get(old.entity_id) is None
+    assert hass.states.get("sensor.front_door_status") is not None
 
 
 async def test_activity_is_logged(hass: HomeAssistant) -> None:
